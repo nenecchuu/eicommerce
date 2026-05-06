@@ -78,6 +78,9 @@ export function registerProductsImport(program: Command) {
       const doUpdate = await p.confirm({ message: "Update produk yang sudah ada? (default: skip)", initialValue: false });
       abortOnCancel(doUpdate);
 
+      const ignoreStock = await p.confirm({ message: "Ignore stock? (set semua varian ke 1000)", initialValue: false });
+      abortOnCancel(ignoreStock);
+
       const limitVal = await p.text({
         message: "Batasi jumlah produk yang diimport (opsional, Enter untuk semua)",
         placeholder: "kosongkan untuk semua",
@@ -129,11 +132,11 @@ export function registerProductsImport(program: Command) {
       const sourceUrls = products.map((p) => p.product_url);
       const { data: existingRows } = await supabase
         .from("products")
-        .select("source_url")
+        .select("shopee_url")
         .eq("tenant_id", tenant.id)
-        .in("source_url", sourceUrls);
+        .in("shopee_url", sourceUrls);
 
-      const existingSet = new Set((existingRows ?? []).map((r) => r.source_url));
+      const existingSet = new Set((existingRows ?? []).map((r) => r.shopee_url));
       const toImport = products.filter((p) => doUpdate || !existingSet.has(p.product_url));
       const toSkip = products.length - toImport.length;
 
@@ -191,7 +194,7 @@ export function registerProductsImport(program: Command) {
         usedSlugs.add(slug);
 
         const productRow = transformProduct(product, tenant.id, slug, i);
-        const variantRows = transformVariants(product, tenant.id);
+        const variantRows = transformVariants(product, tenant.id, ignoreStock as boolean);
 
         try {
           if (doUpdate && existingSet.has(product.product_url)) {
@@ -199,7 +202,7 @@ export function registerProductsImport(program: Command) {
               .from("products")
               .select("id")
               .eq("tenant_id", tenant.id)
-              .eq("source_url", product.product_url)
+              .eq("shopee_url", product.product_url)
               .single();
 
             if (existingProd) {
@@ -212,11 +215,6 @@ export function registerProductsImport(program: Command) {
                   attr2_name: productRow.attr2_name,
                   attr3_name: productRow.attr3_name,
                   has_variant: productRow.has_variant,
-                  source_data: productRow.source_data,
-                  rating: productRow.rating,
-                  rating_count: productRow.rating_count,
-                  sold_display: productRow.sold_display,
-                  base_price: productRow.base_price,
                 }).eq("id", existingProd.id)
                 .then((r) => { if (r.error) throw r.error; return r; })
               );
@@ -249,7 +247,12 @@ export function registerProductsImport(program: Command) {
           }
         } catch (err: unknown) {
           failed++;
-          errors.push({ name: product.name, error: err instanceof Error ? err.message : String(err) });
+          const errorMsg = err instanceof Error
+            ? err.message
+            : typeof err === "object" && err !== null
+              ? (err as any).message ?? JSON.stringify(err)
+              : String(err);
+          errors.push({ name: product.name, error: errorMsg });
         }
       }
 

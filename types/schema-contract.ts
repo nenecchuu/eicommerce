@@ -70,6 +70,7 @@ export interface ProductVariant {
   price: number;
   available_qty: number;
   is_active: boolean;
+  images: string[];
   created_at: string;
   updated_at: string;
 }

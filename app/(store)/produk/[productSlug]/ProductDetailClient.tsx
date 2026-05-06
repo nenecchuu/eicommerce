@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, ChevronLeft, Minus, Plus, Check } from "lucide-react";
@@ -49,6 +49,21 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
   const hasVariants = product.variants.length > 0;
   const attrOptions = buildAttrOptions(product.variants);
 
+  // Build gallery: product images + variant images
+  const variantImages = product.variants
+    .filter((v) => v.images && v.images.length > 0)
+    .map((v) => ({ ...v, imageUrl: v.images[0] }));
+
+  const galleryImages = [
+    ...product.images.map((img, i) => ({ ...img, type: "product" as const, index: i })),
+    ...variantImages.map((v) => ({
+      url: v.imageUrl,
+      alt: `${product.name} - ${v.attr1_val} ${v.attr2_val}`,
+      type: "variant" as const,
+      variant: v,
+    })),
+  ];
+
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
   const [selectedAttr1, setSelectedAttr1] = useState<string | null>(
@@ -81,6 +96,32 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
         (selectedAttr1 === null || v.attr1_val === selectedAttr1) &&
         v.available_qty > 0
     );
+  };
+
+  // Change main image when variant is selected
+  useEffect(() => {
+    if (selectedVariant && selectedVariant.images && selectedVariant.images.length > 0) {
+      // Find the index of variant's first image in gallery
+      const variantImgIndex = galleryImages.findIndex(
+        (img) => img.type === "variant" && img.variant?.id === selectedVariant.id
+      );
+      if (variantImgIndex !== -1) {
+        setActiveImg(variantImgIndex);
+      }
+    } else {
+      // Reset to first product image if no variant selected
+      setActiveImg(0);
+    }
+  }, [selectedVariant, galleryImages]);
+
+  const handleImageClick = (index: number) => {
+    setActiveImg(index);
+    const img = galleryImages[index];
+    if (img.type === "variant" && img.variant) {
+      const v = img.variant;
+      if (v.attr1_val) setSelectedAttr1(v.attr1_val);
+      if (v.attr2_val) setSelectedAttr2(v.attr2_val);
+    }
   };
 
   const handleAddToCart = () => {
@@ -119,10 +160,10 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
         {/* Image gallery */}
         <div className="flex flex-col gap-3 md:w-[420px] flex-shrink-0">
           <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-gray-100">
-            {product.images?.[activeImg] ? (
+            {galleryImages[activeImg] ? (
               <Image
-                src={product.images[activeImg].url}
-                alt={product.images[activeImg].alt}
+                src={galleryImages[activeImg].url}
+                alt={galleryImages[activeImg].alt}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 420px"
@@ -140,12 +181,12 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
               </span>
             )}
           </div>
-          {product.images.length > 1 && (
+          {galleryImages.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {product.images.map((img, i) => (
+              {galleryImages.map((img, i) => (
                 <button
                   key={i}
-                  onClick={() => setActiveImg(i)}
+                  onClick={() => handleImageClick(i)}
                   className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
                     i === activeImg
                       ? "border-[var(--tenant-primary)]"

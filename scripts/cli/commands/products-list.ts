@@ -52,7 +52,7 @@ export function registerProductsList(program: Command) {
 
       let query = supabase
         .from("products")
-        .select("id, slug, name, base_price, has_variant, is_active, created_at")
+        .select("id, slug, name, has_variant, is_active, created_at")
         .eq("tenant_id", tenant.id)
         .order("display_order", { ascending: true })
         .limit(limit);
@@ -78,7 +78,6 @@ export function registerProductsList(program: Command) {
         products.map((p) => ({
           Slug: p.slug,
           Nama: p.name.slice(0, 40) + (p.name.length > 40 ? "…" : ""),
-          Harga: `Rp ${Number(p.base_price).toLocaleString("id-ID")}`,
           Varian: p.has_variant ? "ya" : "tidak",
           Status: p.is_active ? "aktif" : "nonaktif",
         }))
