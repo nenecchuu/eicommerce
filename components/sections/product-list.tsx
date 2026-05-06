@@ -94,7 +94,8 @@ export default function ProductListSection({ props, allProducts }: Props) {
           {props.show_view_all && (
             <Link
               href="/produk"
-              className="text-xs font-semibold text-[var(--tenant-primary)] hover:underline"
+              prefetch={true}
+              className="text-xs font-semibold text-[var(--tenant-primary)] hover:opacity-70 hover:underline active:opacity-50 transition-opacity"
             >
               Lihat Semua →
             </Link>

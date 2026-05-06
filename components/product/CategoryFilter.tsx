@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -9,39 +9,34 @@ interface Props {
 }
 
 export default function CategoryFilter({ categories, active }: Props) {
-  const router = useRouter();
-
-  const go = (cat?: string) => {
-    const url = cat ? `/?category=${encodeURIComponent(cat)}` : "/";
-    router.push(url);
-  };
-
   return (
     <div className="flex flex-wrap gap-2 mb-6">
-      <button
-        onClick={() => go()}
+      <Link
+        href="/"
+        prefetch={true}
         className={cn(
-          "px-3 py-1 rounded-full text-xs border transition-colors",
+          "px-3 py-1 rounded-full text-xs border transition-colors active:scale-95",
           !active
             ? "border-[var(--tenant-primary)] bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)]"
             : "border-gray-300 text-gray-600 hover:border-[var(--tenant-primary)] hover:text-[var(--tenant-primary)]"
         )}
       >
         Semua
-      </button>
+      </Link>
       {categories.map((cat) => (
-        <button
+        <Link
           key={cat}
-          onClick={() => go(cat)}
+          href={`/?category=${encodeURIComponent(cat)}`}
+          prefetch={true}
           className={cn(
-            "px-3 py-1 rounded-full text-xs border transition-colors",
+            "px-3 py-1 rounded-full text-xs border transition-colors active:scale-95",
             active === cat
               ? "border-[var(--tenant-primary)] bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)]"
               : "border-gray-300 text-gray-600 hover:border-[var(--tenant-primary)] hover:text-[var(--tenant-primary)]"
           )}
         >
           {cat}
-        </button>
+        </Link>
       ))}
     </div>
   );
