@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingCart, Bell, User, MapPin, Search, X } from "lucide-react";
 import type { TenantWithCMS } from "@/types/schema-contract";
 import { getCartStore } from "@/lib/cart/store";
@@ -29,10 +29,13 @@ export default function TenantHeader({ tenant }: Props) {
   const useCart = getCartStore(slug);
   const itemCount = useCart((s) => s.itemCount());
 
+  const [mounted, setMounted] = useState(false);
   const [promoIdx] = useState(0);
   const [city, setCity] = useState("Pilih Kota");
   const [showCities, setShowCities] = useState(false);
   const [search, setSearch] = useState("");
+
+  useEffect(() => setMounted(true), []);
 
   const handleSearch = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -146,7 +149,7 @@ export default function TenantHeader({ tenant }: Props) {
               className="relative flex items-center gap-1 opacity-90 hover:opacity-100 transition-opacity"
             >
               <ShoppingCart size={22} />
-              {itemCount > 0 && (
+              {mounted && itemCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-white text-[var(--tenant-primary)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {itemCount > 9 ? "9+" : itemCount}
                 </span>

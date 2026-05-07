@@ -53,9 +53,9 @@ export async function getTenantByDomain(domain: string): Promise<TenantWithCMS |
 
 export async function getTenant(slug: string): Promise<TenantWithCMS | null> {
   if (USE_MOCK) {
-    const { mockTenant, mockCMS } = await import("@/lib/mock/sample-tenant");
+    const { mockTenant, mockCMS, mockOriginAddress } = await import("@/lib/mock/sample-tenant");
     if (mockTenant.slug !== slug) return null;
-    return { ...mockTenant, cms: mockCMS };
+    return { ...mockTenant, cms: mockCMS, origin_address: mockOriginAddress };
   }
 
   const { createClient } = await import("@/lib/supabase/server");
@@ -77,5 +77,11 @@ export async function getTenant(slug: string): Promise<TenantWithCMS | null> {
 
   if (!cms) return null;
 
-  return { ...tenant, cms };
+  const { data: origin_address } = await supabase
+    .from("tenant_origin_addresses")
+    .select("*")
+    .eq("tenant_id", tenant.id)
+    .single();
+
+  return { ...tenant, cms, origin_address: origin_address ?? null };
 }

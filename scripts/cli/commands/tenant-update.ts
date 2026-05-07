@@ -51,9 +51,20 @@ export function registerTenantUpdate(program: Command) {
         process.exit(1);
       }
 
+      const { data: existingOrigin } = await supabase
+        .from("tenant_origin_addresses")
+        .select("*")
+        .eq("tenant_id", tenant.id)
+        .single();
+
+      const originLabel = existingOrigin
+        ? `${existingOrigin.district}, ${existingOrigin.city}`
+        : "belum diset";
+
       log.blank();
       console.log(`  Nama:   ${pc.bold(tenant.name)}`);
       console.log(`  Status: ${tenant.is_active ? pc.green("aktif") : pc.yellow("nonaktif")}`);
+      console.log(`  Origin: ${pc.dim(originLabel)}`);
       log.blank();
 
       const fields = await p.multiselect({
@@ -68,6 +79,7 @@ export function registerTenantUpdate(program: Command) {
           { value: "whatsapp", label: `WhatsApp ${pc.dim(`(saat ini: ${cms.whatsapp_number || "-"})`)}` },
           { value: "instagram", label: `Instagram ${pc.dim(`(saat ini: ${cms.instagram_handle || "-"})`)}` },
           { value: "qris", label: `QRIS image URL ${pc.dim(`(saat ini: ${cms.payment_info?.qris_image_url || "-"})`)}` },
+          { value: "origin_address", label: `Alamat asal pengiriman ${pc.dim(`(saat ini: ${originLabel})`)}` },
           { value: "is_active", label: `Status aktif ${pc.dim(`(saat ini: ${tenant.is_active ? "aktif" : "nonaktif"})`)}` },
         ],
         required: true,
@@ -77,6 +89,14 @@ export function registerTenantUpdate(program: Command) {
       const selected = fields as string[];
       const tenantUpdates: Record<string, unknown> = {};
       const cmsUpdates: Record<string, unknown> = {};
+      let newOriginAddress: {
+        biteship_area_id: string;
+        address: string;
+        district: string;
+        city: string;
+        province: string;
+        postal_code: string;
+      } | null = null;
 
       for (const field of selected) {
         if (field === "name") {
@@ -158,6 +178,94 @@ export function registerTenantUpdate(program: Command) {
           abortOnCancel(val);
           tenantUpdates.is_active = val;
         }
+
+        if (field === "origin_address") {
+          const BITESHIP_KEY = process.env.BITESHIP_API_KEY;
+          let areaSelected = false;
+
+          while (!areaSelected) {
+            const searchQuery = await p.text({
+              message: "Cari kecamatan asal (contoh: Pesanggrahan)",
+              placeholder: existingOrigin?.district ?? "Pesanggrahan",
+              validate(v) {
+                if (!v || v.trim().length < 2) return "Minimal 2 karakter";
+              },
+            });
+            abortOnCancel(searchQuery);
+
+            const spinner2 = p.spinner();
+            spinner2.start("Mencari area...");
+
+            let areas: Array<{
+              id: string;
+              administrative_division_level_1_name: string;
+              administrative_division_level_2_name: string;
+              administrative_division_level_3_name: string;
+              postal_code: number;
+            }> = [];
+
+            try {
+              if (BITESHIP_KEY) {
+                const res = await fetch(
+                  `https://api.biteship.com/v1/maps/areas?input=${encodeURIComponent((searchQuery as string).trim())}&type=single`,
+                  { headers: { Authorization: `Bearer ${BITESHIP_KEY}` } }
+                );
+                const data = await res.json() as { areas?: typeof areas };
+                areas = data.areas ?? [];
+              } else {
+                areas = [
+                  { id: "IDNP6IDNC60IDND266IDZ12220", administrative_division_level_1_name: "DKI Jakarta", administrative_division_level_2_name: "Jakarta Selatan", administrative_division_level_3_name: "Pesanggrahan", postal_code: 12220 },
+                  { id: "IDNP6IDNC60IDND265IDZ12250", administrative_division_level_1_name: "DKI Jakarta", administrative_division_level_2_name: "Jakarta Selatan", administrative_division_level_3_name: "Bintaro", postal_code: 12250 },
+                ];
+              }
+            } catch {
+              spinner2.stop("Gagal terhubung ke Biteship");
+              log.warn("Gagal search area. Lewati atau coba lagi.");
+              const retry = await p.confirm({ message: "Coba lagi?", initialValue: true });
+              abortOnCancel(retry);
+              if (!retry) break;
+              continue;
+            }
+
+            if (areas.length === 0) {
+              spinner2.stop("Tidak ditemukan");
+              log.warn(`Tidak ada area untuk "${String(searchQuery)}". Coba kata kunci lain.`);
+              continue;
+            }
+
+            spinner2.stop(`${areas.length} area ditemukan`);
+
+            const areaChoice = await p.select({
+              message: "Pilih area:",
+              options: areas.slice(0, 10).map((a) => ({
+                value: a.id,
+                label: `${a.administrative_division_level_3_name}, ${a.administrative_division_level_2_name}, ${a.administrative_division_level_1_name} ${a.postal_code}`,
+              })),
+            });
+            abortOnCancel(areaChoice);
+
+            const chosen = areas.find((a) => a.id === areaChoice)!;
+
+            const detailAddress = await p.text({
+              message: "Alamat lengkap (jalan, nomor, gedung)",
+              defaultValue: existingOrigin?.address ?? "",
+              validate(v) {
+                if (!v?.trim()) return "Alamat tidak boleh kosong";
+              },
+            });
+            abortOnCancel(detailAddress);
+
+            newOriginAddress = {
+              biteship_area_id: chosen.id,
+              address: (detailAddress as string).trim(),
+              district: chosen.administrative_division_level_3_name,
+              city: chosen.administrative_division_level_2_name,
+              province: chosen.administrative_division_level_1_name,
+              postal_code: String(chosen.postal_code),
+            };
+            areaSelected = true;
+          }
+        }
       }
 
       const spinner = p.spinner();
@@ -171,6 +279,13 @@ export function registerTenantUpdate(program: Command) {
       if (Object.keys(cmsUpdates).length > 0) {
         const { error } = await supabase.from("tenant_cms").update(cmsUpdates).eq("tenant_id", tenant.id);
         if (error) { spinner.stop("Gagal"); log.error(`Gagal update CMS: ${error.message}`); process.exit(1); }
+      }
+
+      if (newOriginAddress) {
+        const { error } = await supabase
+          .from("tenant_origin_addresses")
+          .upsert({ tenant_id: tenant.id, ...newOriginAddress }, { onConflict: "tenant_id" });
+        if (error) { spinner.stop("Gagal"); log.error(`Gagal update origin address: ${error.message}`); process.exit(1); }
       }
 
       spinner.stop("Selesai");

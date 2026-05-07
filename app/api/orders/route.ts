@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getTenantByDomain } from "@/lib/queries/getTenant";
+import { getTenantDomain } from "@/lib/utils/tenant";
 
 interface CreateOrderRequest {
-  tenant_id: string;
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
@@ -25,10 +26,9 @@ interface CreateOrderRequest {
 
 // Validation schema
 const createOrderSchema = z.object({
-  tenant_id: z.string().uuid(),
   customer_name: z.string().min(2, "Nama minimal 2 karakter"),
   customer_phone: z.string().min(10, "No. telepon minimal 10 digit").regex(/^[0-9+]+$/, "Hanya angka diperbolehkan"),
-  customer_email: z.string().email().optional(),
+  customer_email: z.string().email().optional().or(z.literal("")),
   shipping_address: z.string().min(10, "Alamat minimal 10 karakter"),
   shipping_courier: z.string().min(1, "Kurir harus dipilih"),
   shipping_service: z.string().min(1, "Layanan harus dipilih"),
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Validasi gagal",
-          details: validation.error.errors,
+          details: validation.error.issues,
         },
         { status: 400 }
       );
@@ -66,20 +66,12 @@ export async function POST(request: NextRequest) {
 
     const validated = validation.data;
 
-    // Calculate totals
-    const subtotal = validated.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const total_amount = subtotal + validated.shipping_cost;
+    const domain = await getTenantDomain();
+    if (!domain) {
+      return NextResponse.json({ error: "Tenant tidak ditemukan" }, { status: 404 });
+    }
 
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-
-    // Check tenant exists
-    const { data: tenant } = await supabase
-      .from("tenants")
-      .select("id, is_active")
-      .eq("id", validated.tenant_id)
-      .single();
-
+    const tenant = await getTenantByDomain(domain);
     if (!tenant) {
       return NextResponse.json({ error: "Tenant tidak ditemukan" }, { status: 404 });
     }
@@ -88,14 +80,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Tenant tidak aktif" }, { status: 403 });
     }
 
+    // Calculate totals
+    const subtotal = validated.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const total_amount = subtotal + validated.shipping_cost;
+
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+
     // Insert order
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
-        tenant_id: validated.tenant_id,
+        tenant_id: tenant.id,
         customer_name: validated.customer_name,
         customer_phone: validated.customer_phone,
-        customer_email: validated.customer_email || null,
+        customer_email: validated.customer_email || "",
         shipping_address: validated.shipping_address,
         shipping_courier: validated.shipping_courier,
         shipping_service: validated.shipping_service,
@@ -105,7 +104,7 @@ export async function POST(request: NextRequest) {
         discount_amount: 0,
         tax_amount: 0,
         total_amount,
-        notes: validated.notes || null,
+        notes: validated.notes || "",
         status: 0, // pending_payment
         status_text: "pending_payment",
         payment_proof_url: "",
@@ -123,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     // Insert order items (snapshot data)
     const orderItems = validated.items.map((item) => ({
-      tenant_id: validated.tenant_id,
+      tenant_id: tenant.id,
       order_id: order.id,
       product_id: item.product_id,
       variant_id: item.variant_id || "",

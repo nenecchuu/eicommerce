@@ -1,6 +1,7 @@
 import type {
   Tenant,
   TenantCMS,
+  TenantOriginAddress,
   Product,
   ProductVariant,
 } from "@/types/schema-contract";
@@ -37,12 +38,25 @@ export const mockCMS: TenantCMS = {
   },
 };
 
+export const mockOriginAddress: TenantOriginAddress = {
+  tenant_id: "mock-tenant-001",
+  biteship_area_id: "IDNP6IDNC60IDND266IDZ12220",
+  address: "Jl. Raya Pesanggrahan No. 10",
+  district: "Pesanggrahan",
+  city: "Jakarta Selatan",
+  province: "DKI Jakarta",
+  postal_code: "12220",
+  created_at: "2024-01-01T00:00:00Z",
+  updated_at: "2024-01-01T00:00:00Z",
+};
+
 const img = (name: string) =>
   `https://placehold.co/800x800/4F7942/ffffff?text=${encodeURIComponent(name)}`;
 
 const baseVariantFields = {
   tenant_id: "mock-tenant-001",
   is_active: true,
+  images: [] as string[],
   created_at: "",
   updated_at: "",
 };

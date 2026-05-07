@@ -1,5 +1,27 @@
 // Source of truth until Supabase auto-gen types are set up.
-// Reflects actual Supabase schema as of migration add_missing_columns (2026-05-05).
+// Reflects actual Supabase schema as of migration create_tenant_origin_addresses (2026-05-06).
+
+export interface TenantOriginAddress {
+  tenant_id: string;
+  biteship_area_id: string;
+  address: string;
+  district: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Shape returned by /api/biteship/areas
+export interface BiteshipArea {
+  biteship_area_id: string;
+  name: string;
+  district: string;
+  city: string;
+  province: string;
+  postal_code: string;
+}
 
 export interface Tenant {
   id: string;
@@ -131,6 +153,7 @@ export interface OrderItem {
 // Joined type used in tenant layout
 export interface TenantWithCMS extends Tenant {
   cms: TenantCMS;
+  origin_address: TenantOriginAddress | null;
 }
 
 // Cart types

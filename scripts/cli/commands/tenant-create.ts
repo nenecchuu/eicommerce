@@ -265,6 +265,106 @@ export function registerTenantCreate(program: Command) {
       abortOnCancel(qrisVal);
       const qrisImageUrl = (qrisVal as string).trim() || "";
 
+      // --- ORIGIN ADDRESS ---
+      let originAddress: {
+        biteship_area_id: string;
+        address: string;
+        district: string;
+        city: string;
+        province: string;
+        postal_code: string;
+      } | null = null;
+
+      const wantOrigin = await p.confirm({ message: "Tambah alamat asal pengiriman sekarang?", initialValue: true });
+      abortOnCancel(wantOrigin);
+
+      if (wantOrigin) {
+        const BITESHIP_KEY = process.env.BITESHIP_API_KEY;
+
+        let areaSelected = false;
+        while (!areaSelected) {
+          const searchQuery = await p.text({
+            message: "Cari kecamatan asal (contoh: Pesanggrahan)",
+            placeholder: "Pesanggrahan",
+            validate(v) {
+              if (!v || v.trim().length < 2) return "Minimal 2 karakter";
+            },
+          });
+          abortOnCancel(searchQuery);
+
+          const spinner2 = p.spinner();
+          spinner2.start("Mencari area...");
+
+          let areas: Array<{
+            id: string;
+            name: string;
+            administrative_division_level_1_name: string;
+            administrative_division_level_2_name: string;
+            administrative_division_level_3_name: string;
+            postal_code: number;
+          }> = [];
+
+          try {
+            if (BITESHIP_KEY) {
+              const res = await fetch(
+                `https://api.biteship.com/v1/maps/areas?input=${encodeURIComponent((searchQuery as string).trim())}&type=single`,
+                { headers: { Authorization: `Bearer ${BITESHIP_KEY}` } }
+              );
+              const data = await res.json() as { areas?: typeof areas };
+              areas = data.areas ?? [];
+            } else {
+              // fallback mock saat dev tanpa API key
+              areas = [
+                { id: "IDNP6IDNC60IDND266IDZ12220", name: "Pesanggrahan, Jakarta Selatan, DKI Jakarta. 12220", administrative_division_level_1_name: "DKI Jakarta", administrative_division_level_2_name: "Jakarta Selatan", administrative_division_level_3_name: "Pesanggrahan", postal_code: 12220 },
+                { id: "IDNP6IDNC60IDND265IDZ12250", name: "Bintaro, Jakarta Selatan, DKI Jakarta. 12250", administrative_division_level_1_name: "DKI Jakarta", administrative_division_level_2_name: "Jakarta Selatan", administrative_division_level_3_name: "Bintaro", postal_code: 12250 },
+              ];
+            }
+          } catch {
+            spinner2.stop("Gagal terhubung ke Biteship");
+            log.warn("Lewati input origin address — bisa diisi manual via tenant:update");
+            break;
+          }
+
+          if (areas.length === 0) {
+            spinner2.stop("Tidak ditemukan");
+            log.warn(`Tidak ada area untuk "${String(searchQuery)}". Coba kata kunci lain.`);
+            continue;
+          }
+
+          spinner2.stop(`${areas.length} area ditemukan`);
+
+          const areaChoice = await p.select({
+            message: "Pilih area:",
+            options: areas.slice(0, 10).map((a) => ({
+              value: a.id,
+              label: `${a.administrative_division_level_3_name}, ${a.administrative_division_level_2_name}, ${a.administrative_division_level_1_name} ${a.postal_code}`,
+            })),
+          });
+          abortOnCancel(areaChoice);
+
+          const chosen = areas.find((a) => a.id === areaChoice)!;
+
+          const detailAddress = await p.text({
+            message: "Alamat lengkap (jalan, nomor, gedung)",
+            placeholder: "Jl. Raya Pesanggrahan No. 10",
+            validate(v) {
+              if (!v?.trim()) return "Alamat tidak boleh kosong";
+            },
+          });
+          abortOnCancel(detailAddress);
+
+          originAddress = {
+            biteship_area_id: chosen.id,
+            address: (detailAddress as string).trim(),
+            district: chosen.administrative_division_level_3_name,
+            city: chosen.administrative_division_level_2_name,
+            province: chosen.administrative_division_level_1_name,
+            postal_code: String(chosen.postal_code),
+          };
+          areaSelected = true;
+        }
+      }
+
       // --- LAYOUT HOMEPAGE ---
       const layoutVal = await p.select({
         message: "Pilih layout homepage:",
@@ -344,6 +444,21 @@ export function registerTenantCreate(program: Command) {
         log.dim(`Fix manual: INSERT INTO homepage_configs (tenant_id, sections, version) VALUES ('${tenantId}', '[]', 1);`);
       } else {
         spinner.stop("Selesai");
+      }
+
+      // --- INSERT ORIGIN ADDRESS ---
+      if (originAddress) {
+        spinner.start("Menyimpan alamat asal pengiriman...");
+        const { error: originError } = await supabase
+          .from("tenant_origin_addresses")
+          .insert({ tenant_id: tenantId, ...originAddress });
+        if (originError) {
+          spinner.stop("Selesai (dengan peringatan)");
+          log.warn(`origin_address gagal: ${originError.message}`);
+          log.dim(`Fix manual via: make cli tenant:update --tenant=${tenantSlug}`);
+        } else {
+          spinner.stop("Selesai");
+        }
       }
 
       // --- IMPORT PRODUK? ---
