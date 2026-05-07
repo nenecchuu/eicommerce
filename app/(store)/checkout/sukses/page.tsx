@@ -16,7 +16,7 @@ function OrderSuccessContent() {
 
   const orderId = searchParams.get("order") ?? "-";
   const methodParam = searchParams.get("method") as PaymentMethod | null;
-  const [paymentMethod] = useState<PaymentMethod>(methodParam || "bank_transfer");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(methodParam || "bank_transfer");
 
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -123,6 +123,8 @@ function OrderSuccessContent() {
     setError(null);
   };
 
+  if (typeof window === "undefined") return null;
+
   if (!slug) {
     router.replace("/");
     return null;
@@ -205,8 +207,8 @@ function OrderSuccessContent() {
                   <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">{file.name}</p>
-                  <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  <p className="text-sm font-semibold text-gray-900">{file?.name}</p>
+                  <p className="text-xs text-gray-500">{((file?.size ?? 0) / 1024 / 1024).toFixed(2)} MB</p>
                   <button
                     onClick={handleRemoveFile}
                     className="text-xs text-red-600 hover:text-red-700 mt-2"
@@ -274,7 +276,6 @@ function OrderSuccessContent() {
                 src={tenant.cms.payment_info.qris_image_url}
                 alt="QRIS Payment"
                 className="w-48 h-48 rounded-lg"
-                unoptimized
               />
             </div>
             <p className="text-sm text-center text-gray-600">

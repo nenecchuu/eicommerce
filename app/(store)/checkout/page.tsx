@@ -194,7 +194,7 @@ export default function CheckoutPage() {
         }),
       });
       const data = await res.json();
-      if (!data.success) { alert(data.error || "Gagal membuat pesanan."); return; }
+      if (!res.ok || !data.success) { alert(data.error || "Gagal membuat pesanan."); return; }
       clearCart();
       router.push(`/checkout/sukses?order=${data.order_id}&method=${paymentMethod}`);
     } catch (err) {
