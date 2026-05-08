@@ -1,10 +1,12 @@
 import { redirect, notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTenantByDomain } from "@/lib/queries/getTenant";
+import { getHomepageConfig } from "@/lib/queries/getHomepageConfig";
 import { derivePrimaryShades, getContrastText } from "@/lib/utils/color";
 import TenantHeader from "@/components/tenant/TenantHeader";
 import TenantFooter from "@/components/tenant/TenantFooter";
 import WhatsAppFloat from "@/components/tenant/WhatsAppFloat";
+import StickyTopMessageSection from "@/components/sections/sticky-top-message";
 import { requireTenantDomain } from "@/lib/utils/tenant";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -32,10 +34,18 @@ export default async function StoreLayout({
   children: React.ReactNode;
 }) {
   const domain = await requireTenantDomain();
-  const data = await getTenantByDomain(domain);
+  const [data, config] = await Promise.all([
+    getTenantByDomain(domain),
+    getTenantByDomain(domain).then((t) => t ? getHomepageConfig(t.id) : null),
+  ]);
 
   if (!data) notFound();
   if (!data.is_active) redirect("/not-active");
+
+  const stickySection = config?.sections.find(
+    (s): s is Extract<typeof s, { type: "sticky_top_message" }> =>
+      s.type === "sticky_top_message" && s.visible
+  );
 
   const shades = derivePrimaryShades(data.cms.primary_color);
   const contrast = getContrastText(data.cms.primary_color);
@@ -50,6 +60,7 @@ export default async function StoreLayout({
 
   return (
     <div style={cssVars} className="h-screen flex flex-col overflow-hidden">
+      {stickySection && <StickyTopMessageSection props={stickySection.props} />}
       <TenantHeader tenant={data} />
       <main className="flex-1 overflow-y-auto">
         {children}

@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import type { StickyTopMessageProps } from "@/lib/types/homepage";
 
 const COOKIE_KEY = "sticky_dismissed";
 
-export default function StickyTopMessageSection({ props }: { props: StickyTopMessageProps }) {
-  const [visible, setVisible] = useState(true);
+function isCookieDismissed() {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split("; ").some((c) => c.startsWith(`${COOKIE_KEY}=`));
+}
 
-  useEffect(() => {
-    if (props.dismissible) {
-      const dismissed = document.cookie.split("; ").some((c) => c.startsWith(`${COOKIE_KEY}=`));
-      if (dismissed) setVisible(false);
-    }
-  }, [props.dismissible]);
+export default function StickyTopMessageSection({ props }: { props: StickyTopMessageProps }) {
+  const [visible, setVisible] = useState(() =>
+    props.dismissible ? !isCookieDismissed() : true
+  );
 
   const dismiss = () => {
     document.cookie = `${COOKIE_KEY}=1; path=/; max-age=${60 * 60 * 24 * 7}`;
@@ -40,7 +40,7 @@ export default function StickyTopMessageSection({ props }: { props: StickyTopMes
       {props.dismissible && (
         <button
           onClick={dismiss}
-          className="absolute right-3 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100 transition-opacity"
+          className="absolute right-3 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
           aria-label="Tutup"
         >
           <X size={13} />

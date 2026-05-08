@@ -18,6 +18,7 @@ interface Props {
 
 function renderSection(section: Section, tenantId: string, allProducts: ProductWithVariants[]) {
   if (!section.visible) return null;
+  if (section.type === "sticky_top_message") return null;
 
   switch (section.type) {
     case "hero_banner":

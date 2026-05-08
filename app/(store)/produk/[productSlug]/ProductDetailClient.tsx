@@ -237,8 +237,8 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
                 <div>
                   <p className="text-sm font-semibold text-gray-700 mb-2">
                     {selectedAttr1 ? (
-                      <>Ukuran: <span className="text-[var(--tenant-primary)]">{selectedAttr1}</span></>
-                    ) : "Pilih Ukuran"}
+                      <>{product.attr1_name}: <span className="text-[var(--tenant-primary)]">{selectedAttr1}</span></>
+                    ) : `Pilih ${product.attr1_name}`}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {attrOptions.attr1.map((val) => {
@@ -268,8 +268,8 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
                 <div>
                   <p className="text-sm font-semibold text-gray-700 mb-2">
                     {selectedAttr2 ? (
-                      <>Roast: <span className="text-[var(--tenant-primary)]">{selectedAttr2}</span></>
-                    ) : "Pilih Roast"}
+                      <>{product.attr2_name}: <span className="text-[var(--tenant-primary)]">{selectedAttr2}</span></>
+                    ) : `Pilih ${product.attr2_name}`}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {attrOptions.attr2.map((val) => {

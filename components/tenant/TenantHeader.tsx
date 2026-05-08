@@ -12,12 +12,6 @@ interface Props {
   tenant: TenantWithCMS;
 }
 
-const PROMO_MESSAGES = [
-  "🚚 Gratis Ongkir se-Indonesia — tanpa minimum pembelian!",
-  "💵 COD Tersedia — Bayar di Tempat saat barang tiba",
-  "🔒 Transaksi 100% Aman — Garansi uang kembali",
-];
-
 const CITIES = [
   "Jakarta", "Surabaya", "Bandung", "Medan", "Semarang",
   "Makassar", "Palembang", "Tangerang", "Depok", "Bekasi",
@@ -30,7 +24,6 @@ export default function TenantHeader({ tenant }: Props) {
   const itemCount = useCart((s) => s.itemCount());
 
   const [mounted, setMounted] = useState(false);
-  const [promoIdx] = useState(0);
   const [city, setCity] = useState("Pilih Kota");
   const [showCities, setShowCities] = useState(false);
   const [search, setSearch] = useState("");
@@ -46,11 +39,6 @@ export default function TenantHeader({ tenant }: Props) {
 
   return (
     <header className="sticky top-0 z-40 shadow-sm">
-      {/* Promo bar */}
-      <div className="bg-gray-900 text-white text-center text-[11px] py-1.5 px-4 font-medium tracking-wide">
-        {PROMO_MESSAGES[promoIdx % PROMO_MESSAGES.length]}
-      </div>
-
       {/* Main header */}
       <div
         className="bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)]"
