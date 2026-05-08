@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getTenantByDomain } from "@/lib/queries/getTenant";
 import { getFilteredProducts, getProductCategories, type ProductsFilters } from "@/lib/queries/getProducts";
 import { requireTenantDomain } from "@/lib/utils/tenant";
@@ -8,11 +9,20 @@ interface Props {
   searchParams: Promise<{ q?: string; category?: string; minPrice?: string; maxPrice?: string; sort?: string; page?: string }>;
 }
 
-export async function generateMetadata() {
-  return {
-    title: "Produk",
-    description: "Daftar produk kami",
-  };
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const domain = await requireTenantDomain();
+    const tenantData = await getTenantByDomain(domain);
+
+    if (!tenantData) return {};
+
+    return {
+      title: "Produk",
+      description: `Jelajahi koleksi produk terbaik dari ${tenantData.name}`,
+    };
+  } catch {
+    return {};
+  }
 }
 
 export default async function ProductsPage({ searchParams }: Props) {
