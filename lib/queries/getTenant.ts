@@ -1,8 +1,6 @@
 import { unstable_cache } from "next/cache";
 import type { TenantWithCMS } from "@/types/schema-contract";
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
-
 function extractSlugFromDomain(domain: string): string | null {
   const withoutPort = domain.split(":")[0];
 
@@ -21,12 +19,6 @@ function extractSlugFromDomain(domain: string): string | null {
 }
 
 async function fetchTenant(slug: string): Promise<TenantWithCMS | null> {
-  if (USE_MOCK) {
-    const { mockTenant, mockCMS, mockOriginAddress } = await import("@/lib/mock/sample-tenant");
-    if (mockTenant.slug !== slug) return null;
-    return { ...mockTenant, cms: mockCMS, origin_address: mockOriginAddress };
-  }
-
   const { createClient } = await import("@/lib/supabase/server");
   const supabase = await createClient();
 

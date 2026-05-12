@@ -1,6 +1,4 @@
-import type { CartItem, Order, OrderItem } from "@/types/schema-contract";
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+import type { CartItem, OrderItem } from "@/types/schema-contract";
 
 export interface CreateOrderPayload {
   tenant_id: string;
@@ -24,28 +22,6 @@ export async function createOrder(
     0
   );
   const total_amount = subtotal + payload.shipping_cost;
-
-  if (USE_MOCK) {
-    const mockOrderId = `mock-order-${Date.now()}`;
-    console.log("[MOCK] createOrder payload:", {
-      order: {
-        ...payload,
-        subtotal,
-        total_amount,
-        status_text: "pending_payment",
-      },
-      items: payload.items.map((i) => ({
-        product_id: i.product_id,
-        variant_id: i.variant_id,
-        product_name: i.product_name,
-        variant_label: i.variant_label,
-        price: i.price,
-        quantity: i.quantity,
-        subtotal: i.price * i.quantity,
-      })),
-    });
-    return { orderId: mockOrderId };
-  }
 
   const { createClient } = await import("@/lib/supabase/client");
   const supabase = createClient();

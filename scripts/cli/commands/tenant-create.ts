@@ -325,11 +325,9 @@ export function registerTenantCreate(program: Command) {
               const data = await res.json() as { areas?: typeof areas };
               areas = data.areas ?? [];
             } else {
-              // fallback mock saat dev tanpa API key
-              areas = [
-                { id: "IDNP6IDNC60IDND266IDZ12220", name: "Pesanggrahan, Jakarta Selatan, DKI Jakarta. 12220", administrative_division_level_1_name: "DKI Jakarta", administrative_division_level_2_name: "Jakarta Selatan", administrative_division_level_3_name: "Pesanggrahan", postal_code: 12220 },
-                { id: "IDNP6IDNC60IDND265IDZ12250", name: "Bintaro, Jakarta Selatan, DKI Jakarta. 12250", administrative_division_level_1_name: "DKI Jakarta", administrative_division_level_2_name: "Jakarta Selatan", administrative_division_level_3_name: "Bintaro", postal_code: 12250 },
-              ];
+              spinner2.stop("Biteship API key belum dikonfigurasi");
+              log.warn("Lewati input origin address — bisa diisi manual via tenant:update");
+              break;
             }
           } catch {
             spinner2.stop("Gagal terhubung ke Biteship");

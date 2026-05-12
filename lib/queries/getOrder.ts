@@ -1,7 +1,5 @@
 import type { Order, OrderItem } from "@/types/schema-contract";
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
-
 export interface OrderWithItems extends Order {
   items: OrderItem[];
 }
@@ -11,18 +9,6 @@ export async function getOrderByIdAndEmail(
   orderId: string,
   customerEmail: string
 ): Promise<OrderWithItems | null> {
-  if (USE_MOCK) {
-    const { mockOrders, mockOrderItems } = await import("@/lib/mock/sample-tenant");
-    const order = mockOrders.find(
-      (o) => o.id === orderId && o.tenant_id === tenantId && o.customer_email?.toLowerCase() === customerEmail.toLowerCase()
-    );
-    if (!order) return null;
-    return {
-      ...order,
-      items: mockOrderItems.filter((i) => i.order_id === orderId),
-    };
-  }
-
   const { createClient } = await import("@/lib/supabase/server");
   const supabase = await createClient();
 
