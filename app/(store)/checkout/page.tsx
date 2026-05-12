@@ -7,6 +7,7 @@ import { getCartStore } from "@/lib/cart/store";
 import { formatRupiah } from "@/lib/utils/price";
 import { useTenantSlug } from "@/lib/hooks/useTenantSlug";
 import { useFontScale } from "@/lib/context/font-scale-context";
+import { useMetaPixel } from "@/lib/hooks/useMetaPixel";
 import type { TenantWithCMS, BiteshipArea } from "@/types/schema-contract";
 
 interface Form {
@@ -46,6 +47,7 @@ export default function CheckoutPage() {
   const fs = useFontScale();
   const router = useRouter();
   const slug = useTenantSlug();
+  const pixel = useMetaPixel();
 
   const useCart = getCartStore(slug ?? "");
   const items = useCart((s) => s.items);
@@ -76,6 +78,17 @@ export default function CheckoutPage() {
   const [tenant, setTenant] = useState<TenantWithCMS | null>(null);
 
   const total = subtotal + (selectedShipping?.price ?? 0);
+
+  // Fire InitiateCheckout once on mount
+  useEffect(() => {
+    pixel.track("InitiateCheckout", {
+      content_ids: items.map((i) => i.variant_id ?? i.product_id),
+      num_items: items.reduce((s, i) => s + i.quantity, 0),
+      value: subtotal,
+      currency: "IDR",
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     async function fetchTenant() {

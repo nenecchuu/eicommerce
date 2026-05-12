@@ -31,6 +31,7 @@ export const mockCMS: TenantCMS = {
   updated_at: "2024-01-01T00:00:00Z",
   font: "Inter",
   font_size: "regular",
+  meta_pixel_id: null,
   payment_info: {
     bank: [
       { name: "BCA", account_number: "1234567890", account_name: "Warung Kopi Nusantara" },

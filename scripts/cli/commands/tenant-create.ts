@@ -377,6 +377,17 @@ export function registerTenantCreate(program: Command) {
         }
       }
 
+      // --- META PIXEL ---
+      const metaPixelVal = await p.text({
+        message: "Meta Pixel ID (opsional, dari Meta Events Manager)",
+        placeholder: "1234567890123456",
+        validate(v) {
+          if (v && !/^\d{10,20}$/.test(v.trim())) return "Pixel ID hanya digit, 10–20 karakter";
+        },
+      });
+      abortOnCancel(metaPixelVal);
+      const metaPixelId = (metaPixelVal as string).trim() || null;
+
       // --- LAYOUT HOMEPAGE ---
       const layoutVal = await p.select({
         message: "Pilih layout homepage:",
@@ -394,6 +405,7 @@ export function registerTenantCreate(program: Command) {
       console.log(`  Font:     ${font}`);
       console.log(`  Ukuran:   ${fontSize}`);
       console.log(`  Layout:   ${chosenPreset.label}`);
+      if (metaPixelId) console.log(`  Pixel ID: ${metaPixelId}`);
       log.blank();
 
       const confirm = await p.confirm({ message: "Simpan tenant baru ini?" });
@@ -438,6 +450,7 @@ export function registerTenantCreate(program: Command) {
           font,
           font_size: fontSize,
           payment_info: { bank: bankAccounts, qris_image_url: qrisImageUrl },
+          meta_pixel_id: metaPixelId,
         });
         if (error) {
           spinner.stop("Gagal");

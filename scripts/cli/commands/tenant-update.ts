@@ -81,6 +81,7 @@ export function registerTenantUpdate(program: Command) {
           { value: "instagram", label: `Instagram ${pc.dim(`(saat ini: ${cms.instagram_handle || "-"})`)}` },
           { value: "qris", label: `QRIS image URL ${pc.dim(`(saat ini: ${cms.payment_info?.qris_image_url || "-"})`)}` },
           { value: "origin_address", label: `Alamat asal pengiriman ${pc.dim(`(saat ini: ${originLabel})`)}` },
+          { value: "meta_pixel", label: `Meta Pixel ID ${pc.dim(`(saat ini: ${cms.meta_pixel_id || "-"})`)}` },
           { value: "is_active", label: `Status aktif ${pc.dim(`(saat ini: ${tenant.is_active ? "aktif" : "nonaktif"})`)}` },
         ],
         required: true,
@@ -186,6 +187,18 @@ export function registerTenantUpdate(program: Command) {
           const val = await p.text({ message: "QRIS image URL baru", defaultValue: cms.payment_info?.qris_image_url ?? "" });
           abortOnCancel(val);
           cmsUpdates.payment_info = { ...(cms.payment_info ?? {}), qris_image_url: (val as string).trim() };
+        }
+
+        if (field === "meta_pixel") {
+          const val = await p.text({
+            message: "Meta Pixel ID (kosongkan untuk hapus)",
+            defaultValue: cms.meta_pixel_id ?? "",
+            validate(v) {
+              if (v && !/^\d{10,20}$/.test(v.trim())) return "Pixel ID hanya digit, 10–20 karakter";
+            },
+          });
+          abortOnCancel(val);
+          cmsUpdates.meta_pixel_id = (val as string).trim() || null;
         }
 
         if (field === "is_active") {

@@ -9,6 +9,7 @@ import { formatRupiah } from "@/lib/utils/price";
 import { getProductPrice, isProductInStock } from "@/lib/utils/product";
 import { getCartStore } from "@/lib/cart/store";
 import { useFontScale } from "@/lib/context/font-scale-context";
+import { useMetaPixel } from "@/lib/hooks/useMetaPixel";
 
 interface Props {
   product: ProductWithVariants;
@@ -47,6 +48,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
   const router = useRouter();
   const useCart = getCartStore(tenantSlug);
   const addItem = useCart((s) => s.addItem);
+  const pixel = useMetaPixel();
 
   const hasVariants = product.variants.length > 0;
   const attrOptions = buildAttrOptions(product.variants);
@@ -100,6 +102,18 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
     );
   };
 
+  // Fire ViewContent once on mount
+  useEffect(() => {
+    pixel.track("ViewContent", {
+      content_name: product.name,
+      content_ids: [product.id],
+      content_type: "product",
+      value: price,
+      currency: "IDR",
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Change main image when variant is selected
   useEffect(() => {
     if (selectedVariant && selectedVariant.images && selectedVariant.images.length > 0) {
@@ -137,6 +151,14 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
       quantity: qty,
       image_url: product.images?.[0]?.url ?? null,
       slug: product.slug,
+    });
+    pixel.track("AddToCart", {
+      content_name: product.name,
+      content_ids: [selectedVariant?.id ?? product.id],
+      content_type: "product",
+      value: price * qty,
+      currency: "IDR",
+      num_items: qty,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);

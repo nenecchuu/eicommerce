@@ -58,6 +58,7 @@ export interface TenantCMS {
   payment_info: PaymentInfo;
   font: string;
   font_size: "regular" | "large" | "xl";
+  meta_pixel_id: string | null;
 }
 
 export interface ProductImage {
