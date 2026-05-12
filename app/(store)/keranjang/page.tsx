@@ -92,7 +92,6 @@ export default function CartPage() {
                     fill
                     className="object-cover"
                     sizes="80px"
-                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-300 text-[10px]">

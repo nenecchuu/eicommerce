@@ -24,7 +24,6 @@ export default function PromoBannerSection({ props }: { props: PromoBannerProps 
                   fill
                   className="object-cover"
                   sizes="(max-width: 640px) 100vw, 33vw"
-                  unoptimized
                 />
               </div>
             );

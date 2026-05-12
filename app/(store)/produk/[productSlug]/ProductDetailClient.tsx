@@ -215,7 +215,6 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 420px"
-                unoptimized
                 priority
               />
             ) : (
@@ -247,7 +246,6 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
                     fill
                     className="object-cover"
                     sizes="64px"
-                    unoptimized
                   />
                 </button>
               ))}

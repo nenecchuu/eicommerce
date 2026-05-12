@@ -37,7 +37,6 @@ export default function PromoBanner() {
                   fill
                   className="object-cover opacity-70"
                   sizes="(max-width: 640px) 100vw, 50vw"
-                  unoptimized
                 />
                 <div className="absolute inset-0 flex flex-col justify-center px-6">
                   <p className="text-white font-extrabold text-xl drop-shadow">{promo.title}</p>

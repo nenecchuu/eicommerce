@@ -19,7 +19,6 @@ export default function HeroBannerSection({ props }: { props: HeroBannerProps })
           className="object-cover"
           sizes="100vw"
           priority
-          unoptimized
         />
         <div className="absolute inset-0 bg-black/30" />
 

@@ -45,7 +45,6 @@ export default function CategoryListSection({ props }: { props: CategoryListProp
                     fill
                     className="object-cover"
                     sizes="64px"
-                    unoptimized
                   />
                 ) : (
                   getIcon(cat.name)

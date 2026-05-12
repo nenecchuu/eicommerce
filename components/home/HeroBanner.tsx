@@ -61,7 +61,6 @@ export default function HeroBanner() {
               fill
               className="object-cover"
               sizes="100vw"
-              unoptimized
               priority={i === 0}
             />
 
