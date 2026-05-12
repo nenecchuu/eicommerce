@@ -1,14 +1,18 @@
+import dynamic from "next/dynamic";
 import type { HomepageConfig, Section } from "@/lib/types/homepage";
 import type { ProductWithVariants } from "@/types/schema-contract";
 import { SECTION_TYPES } from "@/components/sections/index";
 
+// Hero is above-the-fold — load eagerly
 import HeroBannerSection from "@/components/sections/hero-banner";
-import PromoBannerSection from "@/components/sections/promo-banner";
-import TrustBadgesSection from "@/components/sections/trust-badges";
-import CategoryListSection from "@/components/sections/category-list";
-import TestimonialSection from "@/components/sections/testimonial";
-import StickyTopMessageSection from "@/components/sections/sticky-top-message";
-import ProductListSection from "@/components/sections/product-list";
+
+// Everything below the fold — lazy load to reduce initial JS bundle
+const PromoBannerSection = dynamic(() => import("@/components/sections/promo-banner"));
+const TrustBadgesSection = dynamic(() => import("@/components/sections/trust-badges"));
+const CategoryListSection = dynamic(() => import("@/components/sections/category-list"));
+const TestimonialSection = dynamic(() => import("@/components/sections/testimonial"));
+const StickyTopMessageSection = dynamic(() => import("@/components/sections/sticky-top-message"));
+const ProductListSection = dynamic(() => import("@/components/sections/product-list"));
 
 interface Props {
   config: HomepageConfig;
