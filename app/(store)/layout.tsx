@@ -37,10 +37,8 @@ export default async function StoreLayout({
   children: React.ReactNode;
 }) {
   const domain = await requireTenantDomain();
-  const [data, config] = await Promise.all([
-    getTenantByDomain(domain),
-    getTenantByDomain(domain).then((t) => t ? getHomepageConfig(t.id) : null),
-  ]);
+  const data = await getTenantByDomain(domain);
+  const config = data ? await getHomepageConfig(data.id) : null;
 
   if (!data) notFound();
   if (!data.is_active) redirect("/not-active");
