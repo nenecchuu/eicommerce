@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import type { TenantWithCMS } from "@/types/schema-contract";
 import MainBar from "./header/MainBar";
 import SearchOverlay from "./header/SearchOverlay";
 import MobileMenu from "./header/MobileMenu";
 import type { NavLink } from "./header/types";
+import { useMetaPixel } from "@/lib/hooks/useMetaPixel";
 
 interface Props {
   tenant: TenantWithCMS;
@@ -23,21 +24,31 @@ function buildNavLinks(categories: string[]): NavLink[] {
   ];
 }
 
+function useMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
+
 export default function TenantHeader({ tenant, categories = [] }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const pixel = useMetaPixel();
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [search, setSearch] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    setMenuOpen(false);
-    setSearchOpen(false);
-  }, [pathname]);
+  const [searchOpenState, setSearchOpenState] = useState({
+    open: false,
+    pathname,
+  });
+  const [menuOpenState, setMenuOpenState] = useState({
+    open: false,
+    pathname,
+  });
+  const searchOpen = searchOpenState.open && searchOpenState.pathname === pathname;
+  const menuOpen = menuOpenState.open && menuOpenState.pathname === pathname;
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -48,10 +59,11 @@ export default function TenantHeader({ tenant, categories = [] }: Props) {
     e.preventDefault();
     const q = search.trim();
     if (!q) return;
+    pixel.track("Search", { search_string: q });
     router.push(`/produk?q=${encodeURIComponent(q)}`);
     setSearch("");
-    setSearchOpen(false);
-    setMenuOpen(false);
+    setSearchOpenState({ open: false, pathname });
+    setMenuOpenState({ open: false, pathname });
   };
 
   const navLinks = buildNavLinks(categories);
@@ -66,8 +78,8 @@ export default function TenantHeader({ tenant, categories = [] }: Props) {
           search={search}
           onSearchChange={setSearch}
           onSearchSubmit={handleSearch}
-          onOpenSearch={() => setSearchOpen(true)}
-          onOpenMenu={() => setMenuOpen(true)}
+          onOpenSearch={() => setSearchOpenState({ open: true, pathname })}
+          onOpenMenu={() => setMenuOpenState({ open: true, pathname })}
         />
       </header>
 
@@ -76,7 +88,7 @@ export default function TenantHeader({ tenant, categories = [] }: Props) {
           search={search}
           onSearchChange={setSearch}
           onSubmit={handleSearch}
-          onClose={() => setSearchOpen(false)}
+          onClose={() => setSearchOpenState({ open: false, pathname })}
         />
       )}
 
@@ -85,7 +97,7 @@ export default function TenantHeader({ tenant, categories = [] }: Props) {
           tenant={tenant}
           navLinks={navLinks}
           mounted={mounted}
-          onClose={() => setMenuOpen(false)}
+          onClose={() => setMenuOpenState({ open: false, pathname })}
         />
       )}
     </>

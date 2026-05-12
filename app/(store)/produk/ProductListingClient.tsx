@@ -9,6 +9,7 @@ import ProductCard from "@/components/product/ProductCard";
 import { formatRupiah } from "@/lib/utils/price";
 import type { ProductsResult, ProductsFilters } from "@/lib/queries/getProducts";
 import { productsToGtmItems, useGoogleTagManager } from "@/lib/hooks/useGoogleTagManager";
+import { useMetaPixel } from "@/lib/hooks/useMetaPixel";
 
 interface Props {
   tenantId: string;
@@ -33,6 +34,7 @@ export default function ProductListingClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const gtm = useGoogleTagManager();
+  const pixel = useMetaPixel();
   const itemListId = "product_listing";
 
   const [searchInput, setSearchInput] = useState(initialFilters.search ?? "");
@@ -72,6 +74,11 @@ export default function ProductListingClient({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (searchInput.trim()) {
+      pixel.track("Search", {
+        search_string: searchInput.trim(),
+      });
+    }
     updateURL({ search: searchInput || undefined, page: 1 });
   };
 

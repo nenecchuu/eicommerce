@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, ChevronLeft, Minus, Plus, Check } from "lucide-react";
@@ -56,19 +56,21 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
   const attrOptions = buildAttrOptions(product.variants);
 
   // Build gallery: product images + variant images
-  const variantImages = product.variants
-    .filter((v) => v.images && v.images.length > 0)
-    .map((v) => ({ ...v, imageUrl: v.images[0] }));
+  const galleryImages = useMemo(() => {
+    const variantImages = product.variants
+      .filter((v) => v.images && v.images.length > 0)
+      .map((v) => ({ ...v, imageUrl: v.images[0] }));
 
-  const galleryImages = [
-    ...product.images.map((img, i) => ({ ...img, type: "product" as const, index: i })),
-    ...variantImages.map((v) => ({
-      url: v.imageUrl,
-      alt: `${product.name} - ${v.attr1_val} ${v.attr2_val}`,
-      type: "variant" as const,
-      variant: v,
-    })),
-  ];
+    return [
+      ...product.images.map((img, i) => ({ ...img, type: "product" as const, index: i })),
+      ...variantImages.map((v) => ({
+        url: v.imageUrl,
+        alt: `${product.name} - ${v.attr1_val} ${v.attr2_val}`,
+        type: "variant" as const,
+        variant: v,
+      })),
+    ];
+  }, [product.images, product.name, product.variants]);
 
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
@@ -86,6 +88,13 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
 
   const { price, original, discount } = getProductPrice(product, selectedVariant);
   const inStock = isProductInStock(product, selectedVariant);
+  const activeImageIndex =
+    selectedVariant && selectedVariant.images && selectedVariant.images.length > 0
+      ? galleryImages.findIndex(
+          (img) => img.type === "variant" && img.variant?.id === selectedVariant.id
+        )
+      : activeImg;
+  const displayedImageIndex = activeImageIndex === -1 ? activeImg : activeImageIndex;
 
   const isVariantAvailable = (attr: "attr1" | "attr2", val: string) => {
     if (attr === "attr1") {
@@ -114,29 +123,21 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
     gtm.viewItem(item);
     pixel.track("ViewContent", {
       content_name: product.name,
-      content_ids: [product.id],
+      content_category: product.category ?? undefined,
+      content_ids: [selectedVariant?.id ?? product.id],
       content_type: "product",
+      contents: [
+        {
+          id: selectedVariant?.id ?? product.id,
+          quantity: 1,
+          item_price: price,
+        },
+      ],
       value: price,
       currency: "IDR",
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Change main image when variant is selected
-  useEffect(() => {
-    if (selectedVariant && selectedVariant.images && selectedVariant.images.length > 0) {
-      // Find the index of variant's first image in gallery
-      const variantImgIndex = galleryImages.findIndex(
-        (img) => img.type === "variant" && img.variant?.id === selectedVariant.id
-      );
-      if (variantImgIndex !== -1) {
-        setActiveImg(variantImgIndex);
-      }
-    } else {
-      // Reset to first product image if no variant selected
-      setActiveImg(0);
-    }
-  }, [selectedVariant, galleryImages]);
 
   const handleImageClick = (index: number) => {
     setActiveImg(index);
@@ -169,8 +170,16 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
     gtm.addToCart(gtmItem);
     pixel.track("AddToCart", {
       content_name: product.name,
+      content_category: product.category ?? undefined,
       content_ids: [selectedVariant?.id ?? product.id],
       content_type: "product",
+      contents: [
+        {
+          id: selectedVariant?.id ?? product.id,
+          quantity: qty,
+          item_price: price,
+        },
+      ],
       value: price * qty,
       currency: "IDR",
       num_items: qty,
@@ -199,10 +208,10 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
         {/* Image gallery */}
         <div className="flex flex-col gap-3 md:w-[420px] flex-shrink-0">
           <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-gray-100">
-            {galleryImages[activeImg] ? (
+            {galleryImages[displayedImageIndex] ? (
               <Image
-                src={galleryImages[activeImg].url}
-                alt={galleryImages[activeImg].alt}
+                src={galleryImages[displayedImageIndex].url}
+                alt={galleryImages[displayedImageIndex].alt}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 420px"
@@ -227,7 +236,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
                   key={i}
                   onClick={() => handleImageClick(i)}
                   className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
-                    i === activeImg
+                    i === displayedImageIndex
                       ? "border-[var(--tenant-primary)]"
                       : "border-transparent"
                   }`}

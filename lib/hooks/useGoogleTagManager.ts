@@ -40,7 +40,6 @@ interface EcommercePayload {
   items?: GtmItem[];
   item_list_id?: string;
   item_list_name?: string;
-  transaction_id?: string;
   shipping?: number;
   shipping_tier?: string;
   payment_type?: string;
@@ -55,8 +54,7 @@ type EcommerceEventName =
   | "view_cart"
   | "begin_checkout"
   | "add_shipping_info"
-  | "add_payment_info"
-  | "purchase";
+  | "add_payment_info";
 
 declare global {
   interface Window {
@@ -247,23 +245,6 @@ export function useGoogleTagManager() {
         value: cartValue(items),
         payment_type: paymentType,
         items: items.map((item, index) => cartItemToGtmItem(item, index)),
-      });
-    },
-    purchase(params: {
-      transactionId: string;
-      items: CartItem[];
-      shipping: number;
-      total: number;
-      paymentType: string;
-    }) {
-      if (params.items.length === 0) return;
-      pushEcommerceEvent("purchase", {
-        transaction_id: params.transactionId,
-        currency: CURRENCY,
-        value: params.total,
-        shipping: params.shipping,
-        payment_type: params.paymentType,
-        items: params.items.map((item, index) => cartItemToGtmItem(item, index)),
       });
     },
   }), []);

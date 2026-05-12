@@ -88,6 +88,11 @@ export default function CheckoutPage() {
     gtm.beginCheckout(items);
     pixel.track("InitiateCheckout", {
       content_ids: items.map((i) => i.variant_id ?? i.product_id),
+      contents: items.map((i) => ({
+        id: i.variant_id ?? i.product_id,
+        quantity: i.quantity,
+        item_price: i.price,
+      })),
       num_items: items.reduce((s, i) => s + i.quantity, 0),
       value: subtotal,
       currency: "IDR",
@@ -203,7 +208,6 @@ export default function CheckoutPage() {
 
     setLoadingSubmit(true);
     try {
-      gtm.addPaymentInfo(items, paymentMethod);
       const shippingAddress = `${form.address}\n${selectedArea!.district}, ${selectedArea!.city}, ${selectedArea!.province} ${selectedArea!.postal_code}`;
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -223,12 +227,18 @@ export default function CheckoutPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) { alert(data.error || "Gagal membuat pesanan."); return; }
-      gtm.purchase({
-        transactionId: data.order_id,
-        items,
-        shipping: selectedShipping.price,
-        total: data.total_amount ?? total,
-        paymentType: paymentMethod,
+      gtm.addPaymentInfo(items, paymentMethod);
+      pixel.track("AddPaymentInfo", {
+        content_ids: items.map((i) => i.variant_id ?? i.product_id),
+        contents: items.map((i) => ({
+          id: i.variant_id ?? i.product_id,
+          quantity: i.quantity,
+          item_price: i.price,
+        })),
+        num_items: items.reduce((s, i) => s + i.quantity, 0),
+        value: data.total_amount ?? total,
+        currency: "IDR",
+        payment_method: paymentMethod,
       });
       clearCart();
       router.push(`/checkout/sukses?order=${data.order_id}&method=${paymentMethod}`);
