@@ -1,9 +1,9 @@
 import { unstable_cache } from "next/cache";
+import { createStaticClient } from "@/lib/supabase/static";
 import type { ProductWithVariants } from "@/types/schema-contract";
 
 async function fetchProducts(tenantId: string): Promise<ProductWithVariants[]> {
-  const { createClient } = await import("@/lib/supabase/server");
-  const supabase = await createClient();
+  const supabase = createStaticClient();
 
   const { data: products } = await supabase
     .from("products")
@@ -36,8 +36,7 @@ export async function getProducts(tenantId: string): Promise<ProductWithVariants
 }
 
 async function fetchProduct(tenantId: string, slug: string): Promise<ProductWithVariants | null> {
-  const { createClient } = await import("@/lib/supabase/server");
-  const supabase = await createClient();
+  const supabase = createStaticClient();
 
   const { data: product } = await supabase
     .from("products")
@@ -89,8 +88,7 @@ async function fetchFilteredProducts(
   tenantId: string,
   filters: ProductsFilters = {}
 ): Promise<ProductsResult> {
-  const { createClient } = await import("@/lib/supabase/server");
-  const supabase = await createClient();
+  const supabase = createStaticClient();
 
   let query = supabase
     .from("products")
@@ -179,8 +177,7 @@ export async function getFilteredProducts(
 }
 
 async function fetchProductCategories(tenantId: string): Promise<string[]> {
-  const { createClient } = await import("@/lib/supabase/server");
-  const supabase = await createClient();
+  const supabase = createStaticClient();
 
   const { data } = await supabase
     .from("products")

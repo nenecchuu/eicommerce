@@ -1,9 +1,9 @@
 import { unstable_cache } from "next/cache";
+import { createStaticClient } from "@/lib/supabase/static";
 import type { HomepageConfig } from "@/lib/types/homepage";
 
 async function fetchHomepageConfig(tenantId: string): Promise<HomepageConfig | null> {
-  const { createClient } = await import("@/lib/supabase/server");
-  const supabase = await createClient();
+  const supabase = createStaticClient();
 
   const { data, error } = await supabase
     .from("homepage_configs")

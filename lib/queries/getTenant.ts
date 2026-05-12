@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { createStaticClient } from "@/lib/supabase/static";
 import type { TenantWithCMS } from "@/types/schema-contract";
 
 function extractSlugFromDomain(domain: string): string | null {
@@ -19,8 +20,7 @@ function extractSlugFromDomain(domain: string): string | null {
 }
 
 async function fetchTenant(slug: string): Promise<TenantWithCMS | null> {
-  const { createClient } = await import("@/lib/supabase/server");
-  const supabase = await createClient();
+  const supabase = createStaticClient();
 
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
