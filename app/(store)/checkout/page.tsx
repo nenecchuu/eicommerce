@@ -8,6 +8,7 @@ import { formatRupiah } from "@/lib/utils/price";
 import { useTenantSlug } from "@/lib/hooks/useTenantSlug";
 import { useFontScale } from "@/lib/context/font-scale-context";
 import { useMetaPixel } from "@/lib/hooks/useMetaPixel";
+import { useGoogleTagManager } from "@/lib/hooks/useGoogleTagManager";
 import type { TenantWithCMS, BiteshipArea } from "@/types/schema-contract";
 
 interface Form {
@@ -48,6 +49,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const slug = useTenantSlug();
   const pixel = useMetaPixel();
+  const gtm = useGoogleTagManager();
 
   const useCart = getCartStore(slug ?? "");
   const items = useCart((s) => s.items);
@@ -65,6 +67,7 @@ export default function CheckoutPage() {
   const [showAreaDropdown, setShowAreaDropdown] = useState(false);
   const areaDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const areaRef = useRef<HTMLDivElement>(null);
+  const trackedCheckoutStart = useRef(false);
 
   // Shipping
   const [shippingOptions, setShippingOptions] = useState<ShippingService[] | null>(null);
@@ -79,16 +82,17 @@ export default function CheckoutPage() {
 
   const total = subtotal + (selectedShipping?.price ?? 0);
 
-  // Fire InitiateCheckout once on mount
   useEffect(() => {
+    if (trackedCheckoutStart.current || items.length === 0) return;
+    trackedCheckoutStart.current = true;
+    gtm.beginCheckout(items);
     pixel.track("InitiateCheckout", {
       content_ids: items.map((i) => i.variant_id ?? i.product_id),
       num_items: items.reduce((s, i) => s + i.quantity, 0),
       value: subtotal,
       currency: "IDR",
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [gtm, items, pixel, subtotal]);
 
   useEffect(() => {
     async function fetchTenant() {
@@ -164,7 +168,7 @@ export default function CheckoutPage() {
       if (data.warning) console.warn("[Checkout]", data.warning);
       setShippingOptions(data.services ?? null);
       if (data.services?.length && !selectedShipping) {
-        setSelectedShipping(data.services[0]);
+        selectShipping(data.services[0]);
       }
     } catch (e) {
       console.error("[Checkout] Shipping fetch error:", e);
@@ -184,6 +188,14 @@ export default function CheckoutPage() {
     return Object.keys(e).length === 0;
   };
 
+  const selectShipping = (shipping: ShippingService) => {
+    setSelectedShipping(shipping);
+    gtm.addShippingInfo(
+      items,
+      `${shipping.courier_name} ${shipping.service}`.trim()
+    );
+  };
+
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validate()) return;
@@ -191,6 +203,7 @@ export default function CheckoutPage() {
 
     setLoadingSubmit(true);
     try {
+      gtm.addPaymentInfo(items, paymentMethod);
       const shippingAddress = `${form.address}\n${selectedArea!.district}, ${selectedArea!.city}, ${selectedArea!.province} ${selectedArea!.postal_code}`;
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -210,6 +223,13 @@ export default function CheckoutPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) { alert(data.error || "Gagal membuat pesanan."); return; }
+      gtm.purchase({
+        transactionId: data.order_id,
+        items,
+        shipping: selectedShipping.price,
+        total: data.total_amount ?? total,
+        paymentType: paymentMethod,
+      });
       clearCart();
       router.push(`/checkout/sukses?order=${data.order_id}&method=${paymentMethod}`);
     } catch (err) {
@@ -421,7 +441,7 @@ export default function CheckoutPage() {
                         name="shipping"
                         value={key}
                         checked={active}
-                        onChange={() => setSelectedShipping(opt)}
+                        onChange={() => selectShipping(opt)}
                         className="accent-[var(--tenant-primary)]"
                       />
                       <div>

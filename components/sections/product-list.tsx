@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { ProductListProps } from "@/lib/types/homepage";
@@ -7,6 +8,11 @@ import type { ProductWithVariants } from "@/types/schema-contract";
 import { formatRupiah } from "@/lib/utils/price";
 import { getProductPriceRange } from "@/lib/utils/product";
 import { useFontScale } from "@/lib/context/font-scale-context";
+import {
+  productToGtmItem,
+  productsToGtmItems,
+  useGoogleTagManager,
+} from "@/lib/hooks/useGoogleTagManager";
 
 interface Props {
   props: ProductListProps;
@@ -27,15 +33,42 @@ function resolveProducts(allProducts: ProductWithVariants[], props: ProductListP
   return list.slice(0, props.item_limit);
 }
 
-function ProductCard({ product, layout }: { product: ProductWithVariants; layout: "card" | "full_image" }) {
+function ProductCard({
+  product,
+  layout,
+  index,
+  itemListId,
+  itemListName,
+}: {
+  product: ProductWithVariants;
+  layout: "card" | "full_image";
+  index: number;
+  itemListId: string;
+  itemListName: string;
+}) {
   const fs = useFontScale();
+  const gtm = useGoogleTagManager();
   const image = product.images?.[0];
   const priceRange = getProductPriceRange(product, product.variants);
   const minPrice = priceRange?.min ?? product.variants[0]?.price ?? 0;
+  const handleSelectItem = () => {
+    const item = productToGtmItem({
+      product,
+      index,
+      itemListId,
+      itemListName,
+    });
+    item.price = minPrice;
+    gtm.selectItem(item);
+  };
 
   if (layout === "full_image") {
     return (
-      <Link href={`/produk/${product.slug}`} className="group relative block aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100">
+      <Link
+        href={`/produk/${product.slug}`}
+        onClick={handleSelectItem}
+        className="group relative block aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100"
+      >
         {image && (
           <Image
             src={image.url}
@@ -56,7 +89,7 @@ function ProductCard({ product, layout }: { product: ProductWithVariants; layout
   }
 
   return (
-    <Link href={`/produk/${product.slug}`} className="group block">
+    <Link href={`/produk/${product.slug}`} onClick={handleSelectItem} className="group block">
       <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
         {image ? (
           <Image
@@ -87,7 +120,26 @@ function ProductCard({ product, layout }: { product: ProductWithVariants; layout
 
 export default function ProductListSection({ props, allProducts }: Props) {
   const fs = useFontScale();
-  const products = resolveProducts(allProducts, props);
+  const gtm = useGoogleTagManager();
+  const products = useMemo(
+    () => resolveProducts(allProducts, props),
+    [allProducts, props]
+  );
+  const itemListId = `homepage_${props.title.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`;
+  const itemListName = props.title;
+
+  useEffect(() => {
+    gtm.viewItemList({
+      item_list_id: itemListId,
+      item_list_name: itemListName,
+      items: productsToGtmItems({
+        products,
+        itemListId,
+        itemListName,
+      }),
+    });
+  }, [gtm, itemListId, itemListName, products]);
+
   if (products.length === 0) return null;
 
   return (
@@ -108,14 +160,28 @@ export default function ProductListSection({ props, allProducts }: Props) {
 
         {props.layout === "full_image" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} layout="full_image" />
+            {products.map((p, index) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                layout="full_image"
+                index={index}
+                itemListId={itemListId}
+                itemListName={itemListName}
+              />
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} layout="card" />
+            {products.map((p, index) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                layout="card"
+                index={index}
+                itemListId={itemListId}
+                itemListName={itemListName}
+              />
             ))}
           </div>
         )}

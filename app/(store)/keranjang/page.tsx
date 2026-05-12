@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,24 +10,50 @@ import { formatRupiah } from "@/lib/utils/price";
 import { SHIPPING_OPTIONS } from "@/types/schema-contract";
 import { useTenantSlug } from "@/lib/hooks/useTenantSlug";
 import { useFontScale } from "@/lib/context/font-scale-context";
+import { cartItemToGtmItem, useGoogleTagManager } from "@/lib/hooks/useGoogleTagManager";
 
 export default function CartPage() {
   const fs = useFontScale();
   const router = useRouter();
   const slug = useTenantSlug();
-
-  if (!slug) {
-    router.replace("/");
-    return null;
-  }
-
-  const useCart = getCartStore(slug);
+  const gtm = useGoogleTagManager();
+  const trackedCartView = useRef(false);
+  const useCart = getCartStore(slug ?? "");
   const items = useCart((s) => s.items);
   const removeItem = useCart((s) => s.removeItem);
   const updateQuantity = useCart((s) => s.updateQuantity);
   const subtotal = useCart((s) => s.subtotal());
 
   const minShipping = Math.min(...SHIPPING_OPTIONS.map((o) => o.cost));
+
+  useEffect(() => {
+    if (trackedCartView.current || items.length === 0) return;
+    trackedCartView.current = true;
+    gtm.viewCart(items);
+  }, [gtm, items]);
+
+  const handleQuantityChange = (
+    item: (typeof items)[number],
+    nextQuantity: number
+  ) => {
+    const quantityDiff = nextQuantity - item.quantity;
+    if (quantityDiff > 0) {
+      gtm.addToCart(cartItemToGtmItem({ ...item, quantity: quantityDiff }));
+    } else if (quantityDiff < 0) {
+      gtm.removeFromCart(cartItemToGtmItem({ ...item, quantity: Math.abs(quantityDiff) }));
+    }
+    updateQuantity(item.product_id, item.variant_id, nextQuantity);
+  };
+
+  const handleRemoveItem = (item: (typeof items)[number]) => {
+    gtm.removeFromCart(cartItemToGtmItem(item));
+    removeItem(item.product_id, item.variant_id);
+  };
+
+  if (!slug) {
+    router.replace("/");
+    return null;
+  }
 
   if (items.length === 0) {
     return (
@@ -91,9 +118,7 @@ export default function CartPage() {
               <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                   <button
-                    onClick={() =>
-                      updateQuantity(item.product_id, item.variant_id, item.quantity - 1)
-                    }
+                    onClick={() => handleQuantityChange(item, item.quantity - 1)}
                     className="px-2.5 py-1.5 hover:bg-gray-50 transition-colors"
                   >
                     <Minus size={12} />
@@ -102,9 +127,7 @@ export default function CartPage() {
                     {item.quantity}
                   </span>
                   <button
-                    onClick={() =>
-                      updateQuantity(item.product_id, item.variant_id, item.quantity + 1)
-                    }
+                    onClick={() => handleQuantityChange(item, item.quantity + 1)}
                     className="px-2.5 py-1.5 hover:bg-gray-50 transition-colors"
                   >
                     <Plus size={12} />
@@ -115,7 +138,7 @@ export default function CartPage() {
                     {formatRupiah(item.price * item.quantity)}
                   </p>
                   <button
-                    onClick={() => removeItem(item.product_id, item.variant_id)}
+                    onClick={() => handleRemoveItem(item)}
                     className="text-gray-300 hover:text-red-400 transition-colors"
                   >
                     <Trash2 size={15} />

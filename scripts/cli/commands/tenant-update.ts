@@ -82,6 +82,7 @@ export function registerTenantUpdate(program: Command) {
           { value: "qris", label: `QRIS image URL ${pc.dim(`(saat ini: ${cms.payment_info?.qris_image_url || "-"})`)}` },
           { value: "origin_address", label: `Alamat asal pengiriman ${pc.dim(`(saat ini: ${originLabel})`)}` },
           { value: "meta_pixel", label: `Meta Pixel ID ${pc.dim(`(saat ini: ${cms.meta_pixel_id || "-"})`)}` },
+          { value: "google_tag_manager", label: `Google Tag Manager ID ${pc.dim(`(saat ini: ${cms.google_tag_manager_id || "-"})`)}` },
           { value: "is_active", label: `Status aktif ${pc.dim(`(saat ini: ${tenant.is_active ? "aktif" : "nonaktif"})`)}` },
         ],
         required: true,
@@ -199,6 +200,18 @@ export function registerTenantUpdate(program: Command) {
           });
           abortOnCancel(val);
           cmsUpdates.meta_pixel_id = (val as string).trim() || null;
+        }
+
+        if (field === "google_tag_manager") {
+          const val = await p.text({
+            message: "Google Tag Manager ID (kosongkan untuk hapus)",
+            defaultValue: cms.google_tag_manager_id ?? "",
+            validate(v) {
+              if (v && !/^GTM-[A-Z0-9]+$/i.test(v.trim())) return "GTM ID harus format GTM-XXXXXXX";
+            },
+          });
+          abortOnCancel(val);
+          cmsUpdates.google_tag_manager_id = (val as string).trim().toUpperCase() || null;
         }
 
         if (field === "is_active") {

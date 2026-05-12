@@ -1,10 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import ProductCard from "@/components/product/ProductCard";
 import type { ProductsResult } from "@/lib/queries/getProducts";
+import { productsToGtmItems, useGoogleTagManager } from "@/lib/hooks/useGoogleTagManager";
 
 interface Props {
   tenantId: string;
@@ -15,11 +16,26 @@ interface Props {
 }
 
 export default function CategoryPageClient({
-  tenantName,
   categoryName,
   productsResult,
   categories,
 }: Props) {
+  const gtm = useGoogleTagManager();
+  const itemListId = `category_${categoryName.toLowerCase().replace(/\s+/g, "_")}`;
+  const itemListName = `Category: ${categoryName}`;
+
+  useEffect(() => {
+    gtm.viewItemList({
+      item_list_id: itemListId,
+      item_list_name: itemListName,
+      items: productsToGtmItems({
+        products: productsResult.products,
+        itemListId,
+        itemListName,
+      }),
+    });
+  }, [gtm, itemListId, itemListName, productsResult.products]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">{categoryName}</h1>
@@ -69,8 +85,14 @@ export default function CategoryPageClient({
         </Card>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-          {productsResult.products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {productsResult.products.map((product, index) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              index={index}
+              itemListId={itemListId}
+              itemListName={itemListName}
+            />
           ))}
         </div>
       )}

@@ -59,6 +59,7 @@ export interface TenantCMS {
   font: string;
   font_size: "regular" | "large" | "xl";
   meta_pixel_id: string | null;
+  google_tag_manager_id: string | null;
 }
 
 export interface ProductImage {

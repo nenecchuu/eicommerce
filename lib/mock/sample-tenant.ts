@@ -32,6 +32,7 @@ export const mockCMS: TenantCMS = {
   font: "Inter",
   font_size: "regular",
   meta_pixel_id: null,
+  google_tag_manager_id: null,
   payment_info: {
     bank: [
       { name: "BCA", account_number: "1234567890", account_name: "Warung Kopi Nusantara" },

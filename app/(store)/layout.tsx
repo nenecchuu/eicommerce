@@ -10,6 +10,7 @@ import StickyTopMessageSection from "@/components/sections/sticky-top-message";
 import { requireTenantDomain } from "@/lib/utils/tenant";
 import { FontScaleProvider } from "@/lib/context/font-scale-context";
 import MetaPixel from "@/components/MetaPixel";
+import GoogleTagManager from "@/components/GoogleTagManager";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -62,6 +63,9 @@ export default async function StoreLayout({
 
   return (
     <FontScaleProvider scale={data.cms.font_size ?? "regular"}>
+      {data.cms.google_tag_manager_id && (
+        <GoogleTagManager gtmId={data.cms.google_tag_manager_id} />
+      )}
       {data.cms.meta_pixel_id && <MetaPixel pixelId={data.cms.meta_pixel_id} />}
       <div style={cssVars} className="h-screen flex flex-col overflow-hidden">
         {stickySection && <StickyTopMessageSection props={stickySection.props} />}

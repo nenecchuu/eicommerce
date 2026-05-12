@@ -10,6 +10,7 @@ import { getProductPrice, isProductInStock } from "@/lib/utils/product";
 import { getCartStore } from "@/lib/cart/store";
 import { useFontScale } from "@/lib/context/font-scale-context";
 import { useMetaPixel } from "@/lib/hooks/useMetaPixel";
+import { productToGtmItem, useGoogleTagManager } from "@/lib/hooks/useGoogleTagManager";
 
 interface Props {
   product: ProductWithVariants;
@@ -49,6 +50,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
   const useCart = getCartStore(tenantSlug);
   const addItem = useCart((s) => s.addItem);
   const pixel = useMetaPixel();
+  const gtm = useGoogleTagManager();
 
   const hasVariants = product.variants.length > 0;
   const attrOptions = buildAttrOptions(product.variants);
@@ -104,6 +106,12 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
 
   // Fire ViewContent once on mount
   useEffect(() => {
+    const item = productToGtmItem({
+      product,
+      variant: selectedVariant,
+    });
+
+    gtm.viewItem(item);
     pixel.track("ViewContent", {
       content_name: product.name,
       content_ids: [product.id],
@@ -142,6 +150,12 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
 
   const handleAddToCart = () => {
     if (!inStock) return;
+    const gtmItem = productToGtmItem({
+      product,
+      variant: selectedVariant,
+      quantity: qty,
+    });
+
     addItem({
       product_id: product.id,
       variant_id: selectedVariant?.id ?? null,
@@ -152,6 +166,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
       image_url: product.images?.[0]?.url ?? null,
       slug: product.slug,
     });
+    gtm.addToCart(gtmItem);
     pixel.track("AddToCart", {
       content_name: product.name,
       content_ids: [selectedVariant?.id ?? product.id],

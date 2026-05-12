@@ -388,6 +388,16 @@ export function registerTenantCreate(program: Command) {
       abortOnCancel(metaPixelVal);
       const metaPixelId = (metaPixelVal as string).trim() || null;
 
+      const gtmVal = await p.text({
+        message: "Google Tag Manager ID (opsional, dari GTM seller)",
+        placeholder: "GTM-XXXXXXX",
+        validate(v) {
+          if (v && !/^GTM-[A-Z0-9]+$/i.test(v.trim())) return "GTM ID harus format GTM-XXXXXXX";
+        },
+      });
+      abortOnCancel(gtmVal);
+      const googleTagManagerId = (gtmVal as string).trim().toUpperCase() || null;
+
       // --- LAYOUT HOMEPAGE ---
       const layoutVal = await p.select({
         message: "Pilih layout homepage:",
@@ -406,6 +416,7 @@ export function registerTenantCreate(program: Command) {
       console.log(`  Ukuran:   ${fontSize}`);
       console.log(`  Layout:   ${chosenPreset.label}`);
       if (metaPixelId) console.log(`  Pixel ID: ${metaPixelId}`);
+      if (googleTagManagerId) console.log(`  GTM ID:   ${googleTagManagerId}`);
       log.blank();
 
       const confirm = await p.confirm({ message: "Simpan tenant baru ini?" });
@@ -451,6 +462,7 @@ export function registerTenantCreate(program: Command) {
           font_size: fontSize,
           payment_info: { bank: bankAccounts, qris_image_url: qrisImageUrl },
           meta_pixel_id: metaPixelId,
+          google_tag_manager_id: googleTagManagerId,
         });
         if (error) {
           spinner.stop("Gagal");

@@ -8,20 +8,41 @@ import type { ProductWithVariants } from "@/types/schema-contract";
 import { formatRupiah } from "@/lib/utils/price";
 import { getProductPrice, getProductPriceRange } from "@/lib/utils/product";
 import { useFontScale } from "@/lib/context/font-scale-context";
+import { productToGtmItem, useGoogleTagManager } from "@/lib/hooks/useGoogleTagManager";
 
 interface Props {
   product: ProductWithVariants;
+  index?: number;
+  itemListId?: string;
+  itemListName?: string;
 }
 
-export default function ProductCard({ product }: Props) {
+export default function ProductCard({
+  product,
+  index,
+  itemListId,
+  itemListName,
+}: Props) {
   const fs = useFontScale();
+  const gtm = useGoogleTagManager();
   const image = product.images?.[0];
   const hasVariants = product.variants.length > 0;
   const priceRange = hasVariants ? getProductPriceRange(product, product.variants) : null;
   const { price, original, discount } = getProductPrice(product);
+  const handleSelectItem = () => {
+    if (!itemListId || !itemListName) return;
+    const item = productToGtmItem({
+      product,
+      index,
+      itemListId,
+      itemListName,
+    });
+    if (priceRange) item.price = priceRange.min;
+    gtm.selectItem(item);
+  };
 
   return (
-    <Link href={`/produk/${product.slug}`}>
+    <Link href={`/produk/${product.slug}`} onClick={handleSelectItem}>
       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
         <div className="relative aspect-square w-full overflow-hidden rounded-t-lg bg-gray-100">
           {image ? (

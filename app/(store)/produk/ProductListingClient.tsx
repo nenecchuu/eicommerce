@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import ProductCard from "@/components/product/ProductCard";
 import { formatRupiah } from "@/lib/utils/price";
 import type { ProductsResult, ProductsFilters } from "@/lib/queries/getProducts";
+import { productsToGtmItems, useGoogleTagManager } from "@/lib/hooks/useGoogleTagManager";
 
 interface Props {
   tenantId: string;
@@ -17,8 +18,13 @@ interface Props {
   initialFilters: ProductsFilters;
 }
 
+function currentListName(filters: ProductsFilters) {
+  if (filters.search) return `Search: ${filters.search}`;
+  if (filters.category) return `Category: ${filters.category}`;
+  return "All products";
+}
+
 export default function ProductListingClient({
-  tenantId,
   tenantName,
   productsResult,
   categories,
@@ -26,10 +32,11 @@ export default function ProductListingClient({
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const gtm = useGoogleTagManager();
+  const itemListId = "product_listing";
 
   const [searchInput, setSearchInput] = useState(initialFilters.search ?? "");
   const [showFilters, setShowFilters] = useState(false);
-  const [mobileSortOpen, setMobileSortOpen] = useState(false);
 
   const currentFilters = {
     search: searchParams.get("q") || "",
@@ -39,6 +46,7 @@ export default function ProductListingClient({
     sort: (searchParams.get("sort") as ProductsFilters["sort"]) || "terbaru",
     page: searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1,
   };
+  const itemListName = currentListName(currentFilters);
 
   const updateURL = (updates: Partial<ProductsFilters>) => {
     const params = new URLSearchParams();
@@ -84,6 +92,18 @@ export default function ProductListingClient({
     currentFilters.minPrice ||
     currentFilters.maxPrice ||
     currentFilters.sort !== "terbaru";
+
+  useEffect(() => {
+    gtm.viewItemList({
+      item_list_id: itemListId,
+      item_list_name: itemListName,
+      items: productsToGtmItems({
+        products: productsResult.products,
+        itemListId,
+        itemListName,
+      }),
+    });
+  }, [gtm, itemListId, itemListName, productsResult.products]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -208,7 +228,7 @@ export default function ProductListingClient({
         <div className="flex flex-wrap gap-2 mb-4">
           {currentFilters.search && (
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
-              "{currentFilters.search}"
+              &quot;{currentFilters.search}&quot;
               <button
                 onClick={() => updateURL({ search: undefined, page: 1 })}
                 className="ml-1 hover:text-gray-900"
@@ -258,8 +278,14 @@ export default function ProductListingClient({
         </Card>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-          {productsResult.products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {productsResult.products.map((product, index) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              index={index}
+              itemListId={itemListId}
+              itemListName={itemListName}
+            />
           ))}
         </div>
       )}
