@@ -48,12 +48,18 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const categoryQueryParams = await searchParams;
 
-  const categories = await getProductCategories(tenantData.id);
-
   const categoryName = slug
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+
+  const page = categoryQueryParams.page ? parseInt(categoryQueryParams.page) : 1;
+  const sort = (categoryQueryParams.sort as "terbaru" | "termurah" | "termahal" | "terlaris") || "terbaru";
+
+  const [categories, productsResult] = await Promise.all([
+    getProductCategories(tenantData.id),
+    getFilteredProducts(tenantData.id, { category: categoryName, sort, page, perPage: 12 }),
+  ]);
 
   const categoryExists = categories.some(
     (cat) => cat.toLowerCase() === categoryName.toLowerCase()
@@ -62,16 +68,6 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   if (!categoryExists && categories.length > 0) {
     notFound();
   }
-
-  const page = categoryQueryParams.page ? parseInt(categoryQueryParams.page) : 1;
-  const sort = (categoryQueryParams.sort as "terbaru" | "termurah" | "termahal" | "terlaris") || "terbaru";
-
-  const productsResult = await getFilteredProducts(tenantData.id, {
-    category: categoryName,
-    sort,
-    page,
-    perPage: 12,
-  });
 
   return (
     <CategoryPageClient
