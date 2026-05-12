@@ -1,8 +1,9 @@
+import { unstable_cache } from "next/cache";
 import type { ProductWithVariants } from "@/types/schema-contract";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
-export async function getProducts(tenantId: string): Promise<ProductWithVariants[]> {
+async function fetchProducts(tenantId: string): Promise<ProductWithVariants[]> {
   if (USE_MOCK) {
     const { mockProducts, mockVariants } = await import("@/lib/mock/sample-tenant");
     return mockProducts
@@ -29,10 +30,7 @@ export async function getProducts(tenantId: string): Promise<ProductWithVariants
   const { data: variants } = await supabase
     .from("product_variants")
     .select("*")
-    .in(
-      "product_id",
-      products.map((p) => p.id)
-    );
+    .in("product_id", products.map((p) => p.id));
 
   return products.map((p) => ({
     ...p,
@@ -40,10 +38,17 @@ export async function getProducts(tenantId: string): Promise<ProductWithVariants
   }));
 }
 
-export async function getProduct(
-  tenantId: string,
-  slug: string
-): Promise<ProductWithVariants | null> {
+const getCachedProducts = unstable_cache(
+  fetchProducts,
+  ["products-all"],
+  { revalidate: 300, tags: ["products"] }
+);
+
+export async function getProducts(tenantId: string): Promise<ProductWithVariants[]> {
+  return getCachedProducts(tenantId);
+}
+
+async function fetchProduct(tenantId: string, slug: string): Promise<ProductWithVariants | null> {
   if (USE_MOCK) {
     const { mockProducts, mockVariants } = await import("@/lib/mock/sample-tenant");
     const product = mockProducts.find(
@@ -77,6 +82,16 @@ export async function getProduct(
   return { ...product, variants: variants ?? [] };
 }
 
+const getCachedProduct = unstable_cache(
+  fetchProduct,
+  ["product"],
+  { revalidate: 300, tags: ["products"] }
+);
+
+export async function getProduct(tenantId: string, slug: string): Promise<ProductWithVariants | null> {
+  return getCachedProduct(tenantId, slug);
+}
+
 export interface ProductsFilters {
   search?: string;
   category?: string;
@@ -95,7 +110,7 @@ export interface ProductsResult {
   totalPages: number;
 }
 
-export async function getFilteredProducts(
+async function fetchFilteredProducts(
   tenantId: string,
   filters: ProductsFilters = {}
 ): Promise<ProductsResult> {
@@ -179,7 +194,6 @@ export async function getFilteredProducts(
 
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? 12;
-
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
@@ -203,7 +217,7 @@ export async function getFilteredProducts(
 
   if (filters.minPrice || filters.maxPrice) {
     results = results.filter((p) => {
-      const prices = p.variants.map((v) => v.price);
+      const prices = p.variants.map((v: { price: number }) => v.price);
       if (prices.length === 0) return true;
       const min = Math.min(...prices);
       const max = Math.max(...prices);
@@ -215,8 +229,8 @@ export async function getFilteredProducts(
 
   if (filters.sort && filters.sort !== "terlaris") {
     results.sort((a, b) => {
-      const pricesA = a.variants.map((v) => v.price);
-      const pricesB = b.variants.map((v) => v.price);
+      const pricesA = a.variants.map((v: { price: number }) => v.price);
+      const pricesB = b.variants.map((v: { price: number }) => v.price);
 
       switch (filters.sort) {
         case "terbaru":
@@ -237,7 +251,20 @@ export async function getFilteredProducts(
   return { products: results, total, page, perPage, totalPages };
 }
 
-export async function getProductCategories(tenantId: string): Promise<string[]> {
+const getCachedFilteredProducts = unstable_cache(
+  fetchFilteredProducts,
+  ["products-filtered"],
+  { revalidate: 300, tags: ["products"] }
+);
+
+export async function getFilteredProducts(
+  tenantId: string,
+  filters: ProductsFilters = {}
+): Promise<ProductsResult> {
+  return getCachedFilteredProducts(tenantId, filters);
+}
+
+async function fetchProductCategories(tenantId: string): Promise<string[]> {
   if (USE_MOCK) {
     const { mockProducts } = await import("@/lib/mock/sample-tenant");
     const categories = new Set(
@@ -258,4 +285,14 @@ export async function getProductCategories(tenantId: string): Promise<string[]> 
 
   const categories = new Set(data?.map((p) => p.category).filter(Boolean) ?? []);
   return Array.from(categories).sort();
+}
+
+const getCachedProductCategories = unstable_cache(
+  fetchProductCategories,
+  ["product-categories"],
+  { revalidate: 300, tags: ["products"] }
+);
+
+export async function getProductCategories(tenantId: string): Promise<string[]> {
+  return getCachedProductCategories(tenantId);
 }

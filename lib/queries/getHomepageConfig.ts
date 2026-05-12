@@ -1,8 +1,9 @@
+import { unstable_cache } from "next/cache";
 import type { HomepageConfig } from "@/lib/types/homepage";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
-export async function getHomepageConfig(tenantId: string): Promise<HomepageConfig | null> {
+async function fetchHomepageConfig(tenantId: string): Promise<HomepageConfig | null> {
   if (USE_MOCK) {
     const { mockHomepageConfig } = await import("@/lib/mock/sample-tenant");
     return mockHomepageConfig;
@@ -20,4 +21,14 @@ export async function getHomepageConfig(tenantId: string): Promise<HomepageConfi
   if (error || !data) return null;
 
   return data as HomepageConfig;
+}
+
+const getCachedHomepageConfig = unstable_cache(
+  fetchHomepageConfig,
+  ["homepage-config"],
+  { revalidate: 3600, tags: ["homepage"] }
+);
+
+export async function getHomepageConfig(tenantId: string): Promise<HomepageConfig | null> {
+  return getCachedHomepageConfig(tenantId);
 }

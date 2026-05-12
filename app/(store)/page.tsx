@@ -7,15 +7,14 @@ import { requireTenantDomain } from "@/lib/utils/tenant";
 
 export default async function TenantHomePage() {
   const domain = await requireTenantDomain();
-
-  const [tenantData, products] = await Promise.all([
-    getTenantByDomain(domain),
-    getTenantByDomain(domain).then((t) => (t ? getProducts(t.id) : [])),
-  ]);
+  const tenantData = await getTenantByDomain(domain);
 
   if (!tenantData) notFound();
 
-  const config = await getHomepageConfig(tenantData.id);
+  const [products, config] = await Promise.all([
+    getProducts(tenantData.id),
+    getHomepageConfig(tenantData.id),
+  ]);
 
   if (!config) notFound();
 

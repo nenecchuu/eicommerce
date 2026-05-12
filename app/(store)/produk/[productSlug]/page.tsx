@@ -12,13 +12,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { productSlug } = await params;
   const domain = await requireTenantDomain();
+  const tenantData = await getTenantByDomain(domain);
 
-  const [tenantData, product] = await Promise.all([
-    getTenantByDomain(domain),
-    getTenantByDomain(domain).then((t) => (t ? getProduct(t.id, productSlug) : null)),
-  ]);
+  if (!tenantData) return {};
 
-  if (!tenantData || !product) return {};
+  const product = await getProduct(tenantData.id, productSlug);
+
+  if (!product) return {};
 
   const productImage = product.images?.[0]?.url;
   const description = product.description || `${product.name} - ${tenantData.name}`;
@@ -31,14 +31,7 @@ export async function generateMetadata({
       description,
       siteName: tenantData.name,
       images: productImage
-        ? [
-            {
-              url: productImage,
-              width: 800,
-              height: 800,
-              alt: product.name,
-            },
-          ]
+        ? [{ url: productImage, width: 800, height: 800, alt: product.name }]
         : undefined,
     },
     twitter: {
@@ -57,13 +50,13 @@ export default async function ProductDetailPage({
 }) {
   const { productSlug } = await params;
   const domain = await requireTenantDomain();
+  const tenantData = await getTenantByDomain(domain);
 
-  const [tenantData, product] = await Promise.all([
-    getTenantByDomain(domain),
-    getTenantByDomain(domain).then((t) => (t ? getProduct(t.id, productSlug) : null)),
-  ]);
+  if (!tenantData) notFound();
 
-  if (!tenantData || !product) notFound();
+  const product = await getProduct(tenantData.id, productSlug);
+
+  if (!product) notFound();
 
   return <ProductDetailClient product={product} tenantSlug={tenantData.slug} />;
 }
