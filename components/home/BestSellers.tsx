@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import type { ProductWithVariants } from "@/types/schema-contract";
 import { formatRupiah } from "@/lib/utils/price";
 import { getProductPrice } from "@/lib/utils/product";
+import { useFontScale } from "@/lib/context/font-scale-context";
 
 interface Props {
   products: ProductWithVariants[];
@@ -29,6 +32,7 @@ function StarRating({ score }: { score: number }) {
 }
 
 export default function BestSellers({ products }: Props) {
+  const fs = useFontScale();
   const top = products.slice(0, 8);
   if (top.length === 0) return null;
 
@@ -36,12 +40,12 @@ export default function BestSellers({ products }: Props) {
     <section className="bg-white border-b border-gray-100 py-6">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+          <h2 className={`${fs.sectionHeading} text-gray-800 flex items-center gap-1.5`}>
             🔥 Produk Terlaris
           </h2>
           <Link
             href="#products"
-            className="text-xs font-semibold text-[var(--tenant-primary)] hover:underline"
+            className={`${fs.viewAll} text-[var(--tenant-primary)] hover:underline`}
           >
             Lihat Semua →
           </Link>
@@ -76,32 +80,32 @@ export default function BestSellers({ products }: Props) {
                   )}
                   <div className="absolute top-1.5 left-1.5 flex flex-col gap-1">
                     {discount > 0 && (
-                      <Badge className="bg-red-500 text-white text-[10px] px-1.5 py-0.5">
+                      <Badge className={`bg-red-500 text-white ${fs.badge} px-1.5 py-0.5`}>
                         -{discount}%
                       </Badge>
                     )}
-                    <Badge className="bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] text-[10px] px-1.5 py-0.5">
+                    <Badge className={`bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] ${fs.badge} px-1.5 py-0.5`}>
                       {BADGES[idx % BADGES.length]}
                     </Badge>
                   </div>
                 </div>
 
                 <div className="mt-2 space-y-0.5 px-0.5">
-                  <p className="text-[11px] font-medium text-gray-800 line-clamp-2 leading-snug">
+                  <p className={`${fs.body} font-medium text-gray-800 line-clamp-2 leading-snug`}>
                     {product.name}
                   </p>
                   <div className="flex items-center gap-1.5">
                     <StarRating score={rating} />
-                    <span className="text-[10px] text-gray-400">
+                    <span className={`${fs.meta} text-gray-400`}>
                       {soldCount.toLocaleString("id-ID")}+ terjual
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <p className="text-xs font-bold text-[var(--tenant-primary)]">
+                    <p className={`${fs.price} text-[var(--tenant-primary)]`}>
                       {formatRupiah(price)}
                     </p>
                     {original && original > price && (
-                      <p className="text-[10px] text-gray-400 line-through">
+                      <p className={`${fs.priceStrike} text-gray-400 line-through`}>
                         {formatRupiah(original)}
                       </p>
                     )}

@@ -42,7 +42,7 @@ export default function VoucherSection() {
   return (
     <section className="bg-gray-50 border-b border-gray-100 py-6">
       <div className="max-w-6xl mx-auto px-4">
-        <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
           🏷️ Voucher & Kupon
         </h2>
         <div className="flex gap-3 overflow-x-auto scrollbar-none pb-1">
@@ -54,12 +54,12 @@ export default function VoucherSection() {
                 className={`flex-shrink-0 w-52 rounded-2xl bg-gradient-to-br ${v.color} p-4 text-white shadow-md`}
               >
                 <div className="text-2xl mb-1">{v.badge}</div>
-                <p className="font-bold text-sm">{v.label}</p>
-                <p className="text-white/80 text-xs mt-0.5 leading-snug">{v.desc}</p>
-                <p className="text-white/60 text-[10px] mt-1">{v.expiry}</p>
+                <p className="font-bold text-base">{v.label}</p>
+                <p className="text-white/80 text-sm mt-0.5 leading-snug">{v.desc}</p>
+                <p className="text-white/60 text-xs mt-1">{v.expiry}</p>
                 <button
                   onClick={() => toggle(v.id)}
-                  className={`mt-3 w-full py-1.5 rounded-full text-xs font-bold transition-all ${
+                  className={`mt-3 w-full py-1.5 rounded-full text-sm font-bold transition-all ${
                     isClaimed
                       ? "bg-white/30 text-white cursor-default"
                       : "bg-white text-gray-800 hover:bg-gray-100"

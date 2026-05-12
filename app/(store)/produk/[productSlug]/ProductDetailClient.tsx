@@ -8,6 +8,7 @@ import type { ProductWithVariants, ProductVariant } from "@/types/schema-contrac
 import { formatRupiah } from "@/lib/utils/price";
 import { getProductPrice, isProductInStock } from "@/lib/utils/product";
 import { getCartStore } from "@/lib/cart/store";
+import { useFontScale } from "@/lib/context/font-scale-context";
 
 interface Props {
   product: ProductWithVariants;
@@ -42,6 +43,7 @@ function findVariant(
 }
 
 export default function ProductDetailClient({ product, tenantSlug }: Props) {
+  const fs = useFontScale();
   const router = useRouter();
   const useCart = getCartStore(tenantSlug);
   const addItem = useCart((s) => s.addItem);
@@ -210,21 +212,21 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
         {/* Detail */}
         <div className="flex-1 space-y-5">
           {product.category && (
-            <span className="text-xs text-[var(--tenant-primary)] font-semibold uppercase tracking-wide">
+            <span className={`${fs.meta} text-[var(--tenant-primary)] font-semibold uppercase tracking-wide`}>
               {product.category}
             </span>
           )}
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-snug">
+          <h1 className={`${fs.productTitle} text-gray-900 leading-snug`}>
             {product.name}
           </h1>
 
           {/* Price */}
           <div className="flex items-baseline gap-3">
-            <span className="text-2xl font-extrabold text-[var(--tenant-primary)]">
+            <span className={`${fs.productPrice} text-[var(--tenant-primary)]`}>
               {formatRupiah(price)}
             </span>
             {original && original > price && (
-              <span className="text-sm text-gray-400 line-through">
+              <span className={`${fs.body} text-gray-400 line-through`}>
                 {formatRupiah(original)}
               </span>
             )}
@@ -235,10 +237,10 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
             <div className="space-y-4">
               {attrOptions.attr1.length > 0 && (
                 <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                  <p className={`${fs.label} text-gray-700 mb-2`}>
                     {selectedAttr1 ? (
                       <>{product.attr1_name}: <span className="text-[var(--tenant-primary)]">{selectedAttr1}</span></>
-                    ) : `Pilih ${product.attr1_name}`}
+                    ) : `Pilih ${product.attr1_name ?? ""}`}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {attrOptions.attr1.map((val) => {
@@ -248,7 +250,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
                           key={val}
                           onClick={() => setSelectedAttr1(val)}
                           disabled={!available}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                          className={`px-4 py-2 rounded-lg ${fs.body} font-medium border-2 transition-all ${
                             selectedAttr1 === val
                               ? "border-[var(--tenant-primary)] bg-[var(--tenant-primary-tint)] text-[var(--tenant-primary)]"
                               : available
@@ -266,10 +268,10 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
 
               {attrOptions.attr2.length > 0 && (
                 <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                  <p className={`${fs.label} text-gray-700 mb-2`}>
                     {selectedAttr2 ? (
                       <>{product.attr2_name}: <span className="text-[var(--tenant-primary)]">{selectedAttr2}</span></>
-                    ) : `Pilih ${product.attr2_name}`}
+                    ) : `Pilih ${product.attr2_name ?? ""}`}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {attrOptions.attr2.map((val) => {
@@ -279,7 +281,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
                           key={val}
                           onClick={() => setSelectedAttr2(val)}
                           disabled={!available}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                          className={`px-4 py-2 rounded-lg ${fs.body} font-medium border-2 transition-all ${
                             selectedAttr2 === val
                               ? "border-[var(--tenant-primary)] bg-[var(--tenant-primary-tint)] text-[var(--tenant-primary)]"
                               : available
@@ -296,7 +298,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
               )}
 
               {selectedVariant && (
-                <p className="text-xs text-gray-400">
+                <p className={`${fs.meta} text-gray-400`}>
                   Stok: {selectedVariant.available_qty > 0 ? `${selectedVariant.available_qty} tersisa` : "Habis"}
                 </p>
               )}
@@ -305,7 +307,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
 
           {/* Quantity */}
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-gray-700">Jumlah:</span>
+            <span className={`${fs.label} text-gray-700`}>Jumlah:</span>
             <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
               <button
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -313,7 +315,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
               >
                 <Minus size={14} />
               </button>
-              <span className="w-10 text-center text-sm font-semibold">{qty}</span>
+              <span className={`w-10 text-center ${fs.body} font-semibold`}>{qty}</span>
               <button
                 onClick={() => setQty((q) => q + 1)}
                 className="px-3 py-2 hover:bg-gray-50 transition-colors"
@@ -328,7 +330,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
             <button
               onClick={handleAddToCart}
               disabled={!inStock}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm border-2 transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold ${fs.body} border-2 transition-all ${
                 inStock
                   ? added
                     ? "border-green-500 bg-green-50 text-green-600"
@@ -342,7 +344,7 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
             <button
               onClick={handleBuyNow}
               disabled={!inStock}
-              className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all ${
+              className={`flex-1 py-3 rounded-xl font-semibold ${fs.body} transition-all ${
                 inStock
                   ? "bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] hover:opacity-90 shadow-md"
                   : "bg-gray-100 text-gray-300 cursor-not-allowed"
@@ -355,8 +357,8 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
           {/* Description */}
           {product.description && (
             <div className="pt-2 border-t border-gray-100">
-              <p className="text-sm font-semibold text-gray-700 mb-2">Deskripsi Produk</p>
-              <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+              <p className={`${fs.label} text-gray-700 mb-2`}>Deskripsi Produk</p>
+              <p className={`${fs.body} text-gray-600 leading-relaxed whitespace-pre-line`}>
                 {product.description}
               </p>
             </div>

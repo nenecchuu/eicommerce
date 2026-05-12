@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import type { CategoryListProps } from "@/lib/types/homepage";
+import { useFontScale } from "@/lib/context/font-scale-context";
 
 const FALLBACK_ICONS: Record<string, string> = {
   fashion: "👗", baju: "👕", celana: "👖", sepatu: "👟", tas: "👜",
@@ -18,13 +21,14 @@ function getIcon(name: string) {
 }
 
 export default function CategoryListSection({ props }: { props: CategoryListProps }) {
+  const fs = useFontScale();
   if (props.categories.length === 0) return null;
 
   return (
     <section className="bg-white border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-4 py-6">
         {props.title && (
-          <h2 className="text-sm font-bold text-gray-800 mb-4">{props.title}</h2>
+          <h2 className={`${fs.sectionHeading} text-gray-800 mb-4`}>{props.title}</h2>
         )}
         <div className="flex gap-4 overflow-x-auto scrollbar-none pb-1">
           {props.categories.map((cat) => (
@@ -47,7 +51,7 @@ export default function CategoryListSection({ props }: { props: CategoryListProp
                   getIcon(cat.name)
                 )}
               </div>
-              <span className="text-[11px] font-medium text-gray-600 text-center w-16 truncate">
+              <span className={`${fs.category} font-medium text-gray-600 text-center w-16 truncate`}>
                 {cat.name}
               </span>
             </Link>

@@ -62,7 +62,7 @@ export default function Testimonials() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-6">
           <h2 className="text-base font-bold text-gray-800">💬 Kata Pembeli Kami</h2>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-sm text-gray-400 mt-1">
             1.200+ pembeli puas • Rating 4.9/5
           </p>
         </div>
@@ -85,13 +85,13 @@ export default function Testimonials() {
                   />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-800">{r.name}</p>
-                  <p className="text-[10px] text-gray-400">{r.location}</p>
+                  <p className="text-sm font-semibold text-gray-800">{r.name}</p>
+                  <p className="text-xs text-gray-400">{r.location}</p>
                 </div>
               </div>
               <Stars count={r.rating} />
-              <p className="text-xs text-gray-600 leading-relaxed">"{r.text}"</p>
-              <p className="text-[10px] text-gray-400 italic">Produk: {r.product}</p>
+              <p className="text-sm text-gray-600 leading-relaxed">"{r.text}"</p>
+              <p className="text-xs text-gray-400 italic">Produk: {r.product}</p>
             </div>
           ))}
         </div>

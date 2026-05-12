@@ -57,6 +57,7 @@ export interface TenantCMS {
   updated_at: string;
   payment_info: PaymentInfo;
   font: string;
+  font_size: "regular" | "large" | "xl";
 }
 
 export interface ProductImage {

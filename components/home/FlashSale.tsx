@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import type { ProductWithVariants } from "@/types/schema-contract";
 import { formatRupiah } from "@/lib/utils/price";
 import { getProductPrice } from "@/lib/utils/product";
+import { useFontScale } from "@/lib/context/font-scale-context";
 
 interface Props {
   products: ProductWithVariants[];
@@ -51,6 +52,7 @@ function TimeBox({ value, label }: { value: string; label: string }) {
 }
 
 export default function FlashSale({ products }: Props) {
+  const fs = useFontScale();
   const flashProducts = products
     .filter((p) => {
       const { price, original } = getProductPrice(p);
@@ -58,7 +60,6 @@ export default function FlashSale({ products }: Props) {
     })
     .slice(0, 6);
 
-  // useMemo so the Date object is stable across re-renders but created client-side
   const [endTime] = useState(() => getFlashSaleEnd());
   const time = useCountdown(endTime);
 
@@ -67,10 +68,9 @@ export default function FlashSale({ products }: Props) {
   return (
     <section className="bg-white border-b border-gray-100 py-6">
       <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-base font-extrabold text-gray-900 flex items-center gap-1.5">
+            <h2 className={`${fs.sectionHeading} text-gray-900 flex items-center gap-1.5`}>
               <span className="text-red-500">⚡</span> Flash Sale
             </h2>
             <div className="flex items-center gap-1">
@@ -83,13 +83,12 @@ export default function FlashSale({ products }: Props) {
           </div>
           <Link
             href="#products"
-            className="text-xs font-semibold text-[var(--tenant-primary)] hover:underline"
+            className={`${fs.viewAll} text-[var(--tenant-primary)] hover:underline`}
           >
             Lihat Semua →
           </Link>
         </div>
 
-        {/* Products */}
         <div className="flex gap-3 overflow-x-auto scrollbar-none pb-1">
           {flashProducts.map((product) => {
             const { price, original, discount } = getProductPrice(product);
@@ -115,21 +114,21 @@ export default function FlashSale({ products }: Props) {
                     </div>
                   )}
                   {discount > 0 && (
-                    <Badge className="absolute top-1.5 left-1.5 bg-red-500 text-white text-[10px] px-1.5 py-0.5">
+                    <Badge className={`absolute top-1.5 left-1.5 bg-red-500 text-white ${fs.badge} px-1.5 py-0.5`}>
                       -{discount}%
                     </Badge>
                   )}
                 </div>
                 <div className="mt-1.5 space-y-0.5">
-                  <p className="text-xs font-semibold text-[var(--tenant-primary)]">
+                  <p className={`${fs.price} text-[var(--tenant-primary)]`}>
                     {formatRupiah(price)}
                   </p>
                   {original && original > price && (
-                    <p className="text-[10px] text-gray-400 line-through">
+                    <p className={`${fs.priceStrike} text-gray-400 line-through`}>
                       {formatRupiah(original)}
                     </p>
                   )}
-                  <p className="text-[11px] text-gray-700 line-clamp-2 leading-snug">
+                  <p className={`${fs.body} text-gray-700 line-clamp-2 leading-snug`}>
                     {product.name}
                   </p>
                 </div>

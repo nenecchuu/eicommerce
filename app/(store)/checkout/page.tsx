@@ -6,6 +6,7 @@ import { ChevronLeft, Loader2, Search } from "lucide-react";
 import { getCartStore } from "@/lib/cart/store";
 import { formatRupiah } from "@/lib/utils/price";
 import { useTenantSlug } from "@/lib/hooks/useTenantSlug";
+import { useFontScale } from "@/lib/context/font-scale-context";
 import type { TenantWithCMS, BiteshipArea } from "@/types/schema-contract";
 
 interface Form {
@@ -42,6 +43,7 @@ interface ShippingResponse {
 type PaymentMethod = "bank_transfer" | "qris";
 
 export default function CheckoutPage() {
+  const fs = useFontScale();
   const router = useRouter();
   const slug = useTenantSlug();
 
@@ -212,18 +214,18 @@ export default function CheckoutPage() {
     <div className="max-w-3xl mx-auto px-4 py-6">
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 mb-5 transition-colors"
+        className={`flex items-center gap-1 ${fs.body} text-gray-500 hover:text-gray-800 mb-5 transition-colors`}
       >
         <ChevronLeft size={16} />
         Kembali ke Keranjang
       </button>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
+      <h1 className={`${fs.pageTitle} text-gray-900 mb-6`}>Checkout</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Data diri */}
         <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-          <h2 className="text-sm font-bold text-gray-800 mb-4">Data Penerima</h2>
+          <h2 className={`${fs.sectionHeading} text-gray-800 mb-4`}>Data Penerima</h2>
 
           <Field label="Nama Lengkap" required error={errors.name}>
             <input
@@ -231,7 +233,7 @@ export default function CheckoutPage() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Contoh: Budi Santoso"
-              className={inputClass(!!errors.name)}
+              className={`${inputClass(!!errors.name)} ${fs.body}`}
             />
           </Field>
 
@@ -241,7 +243,7 @@ export default function CheckoutPage() {
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               placeholder="0812xxxxxxxx"
-              className={inputClass(!!errors.phone)}
+              className={`${inputClass(!!errors.phone)} ${fs.body}`}
             />
           </Field>
 
@@ -251,7 +253,7 @@ export default function CheckoutPage() {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="email@contoh.com"
-              className={inputClass(false)}
+              className={`${inputClass(false)} ${fs.body}`}
             />
           </Field>
 
@@ -266,7 +268,7 @@ export default function CheckoutPage() {
                   onChange={(e) => searchArea(e.target.value)}
                   onFocus={() => areaResults.length > 0 && setShowAreaDropdown(true)}
                   placeholder="Ketik nama kecamatan atau kota..."
-                  className={`w-full pl-9 pr-4 py-2.5 rounded-xl border text-sm outline-none transition-colors ${
+                  className={`w-full pl-9 pr-4 py-2.5 rounded-xl border ${fs.body} outline-none transition-colors ${
                     errors.area
                       ? "border-red-400 focus:border-red-500 bg-red-50"
                       : "border-gray-200 focus:border-[var(--tenant-primary)] bg-white"
@@ -284,10 +286,10 @@ export default function CheckoutPage() {
                       <button
                         type="button"
                         onClick={() => selectArea(area)}
-                        className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
+                        className={`w-full text-left px-4 py-3 ${fs.body} hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0`}
                       >
                         <p className="font-medium text-gray-800">{area.district}</p>
-                        <p className="text-xs text-gray-500">{area.city}, {area.province} {area.postal_code}</p>
+                        <p className={`${fs.meta} text-gray-500`}>{area.city}, {area.province} {area.postal_code}</p>
                       </button>
                     </li>
                   ))}
@@ -296,7 +298,7 @@ export default function CheckoutPage() {
 
               {showAreaDropdown && !areaLoading && areaResults.length === 0 && areaQuery.length >= 2 && (
                 <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3">
-                  <p className="text-sm text-gray-500">Area tidak ditemukan</p>
+                  <p className={`${fs.body} text-gray-500`}>Area tidak ditemukan</p>
                 </div>
               )}
             </div>
@@ -308,13 +310,13 @@ export default function CheckoutPage() {
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               placeholder="Nama Jalan, No. Rumah, RT/RW, Kelurahan"
               rows={3}
-              className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition-colors resize-none ${
+              className={`w-full px-4 py-2.5 rounded-xl border ${fs.body} outline-none transition-colors resize-none ${
                 errors.address
                   ? "border-red-400 focus:border-red-500 bg-red-50"
                   : "border-gray-200 focus:border-[var(--tenant-primary)] bg-white"
               }`}
             />
-            {errors.address && <p className="text-xs text-red-500">{errors.address}</p>}
+            {errors.address && <p className={`${fs.meta} text-red-500`}>{errors.address}</p>}
           </Field>
 
           <Field label="Catatan (opsional)">
@@ -323,48 +325,48 @@ export default function CheckoutPage() {
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               placeholder="Pesan untuk penjual..."
-              className={inputClass(false)}
+              className={`${inputClass(false)} ${fs.body}`}
             />
           </Field>
         </section>
 
         {/* Metode Pembayaran */}
         <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-sm font-bold text-gray-800 mb-4">Metode Pembayaran</h2>
+          <h2 className={`${fs.sectionHeading} text-gray-800 mb-4`}>Metode Pembayaran</h2>
           <div className="space-y-3">
             <label className={radioClass(paymentMethod === "bank_transfer")}>
               <input type="radio" name="payment_method" value="bank_transfer" checked={paymentMethod === "bank_transfer"} onChange={() => setPaymentMethod("bank_transfer")} className="accent-blue-500" />
               <div>
-                <p className="text-sm font-semibold text-gray-900">Transfer Bank</p>
-                <p className="text-xs text-gray-500">Bayar ke rekening bank</p>
+                <p className={`${fs.body} font-semibold text-gray-900`}>Transfer Bank</p>
+                <p className={`${fs.meta} text-gray-500`}>Bayar ke rekening bank</p>
               </div>
             </label>
             {tenant?.cms.payment_info?.qris_image_url && (
               <label className={radioClass(paymentMethod === "qris")}>
                 <input type="radio" name="payment_method" value="qris" checked={paymentMethod === "qris"} onChange={() => setPaymentMethod("qris")} className="accent-blue-500" />
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">QRIS</p>
-                  <p className="text-xs text-gray-500">Scan QR untuk bayar</p>
+                  <p className={`${fs.body} font-semibold text-gray-900`}>QRIS</p>
+                  <p className={`${fs.meta} text-gray-500`}>Scan QR untuk bayar</p>
                 </div>
               </label>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-3">Informasi pembayaran lengkap muncul setelah pesanan dibuat.</p>
+          <p className={`${fs.meta} text-gray-400 mt-3`}>Informasi pembayaran lengkap muncul setelah pesanan dibuat.</p>
         </section>
 
         {/* Pengiriman */}
         <section className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-          <h2 className="text-sm font-bold text-gray-800">Pilih Pengiriman</h2>
+          <h2 className={`${fs.sectionHeading} text-gray-800`}>Pilih Pengiriman</h2>
 
           {!tenant?.origin_address && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-700">Toko belum mengatur alamat pengiriman. Hubungi penjual.</p>
+              <p className={`${fs.body} text-yellow-700`}>Toko belum mengatur alamat pengiriman. Hubungi penjual.</p>
             </div>
           )}
 
           {tenant?.origin_address && !selectedArea && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-              <p className="text-sm text-blue-700">Pilih kecamatan tujuan untuk melihat opsi pengiriman</p>
+              <p className={`${fs.body} text-blue-700`}>Pilih kecamatan tujuan untuk melihat opsi pengiriman</p>
             </div>
           )}
 
@@ -372,7 +374,7 @@ export default function CheckoutPage() {
             <button
               type="button"
               onClick={fetchShippingRates}
-              className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 text-sm text-gray-500 hover:border-[var(--tenant-primary)] hover:text-[var(--tenant-primary)] transition-colors"
+              className={`w-full py-3 rounded-xl border-2 border-dashed border-gray-300 ${fs.body} text-gray-500 hover:border-[var(--tenant-primary)] hover:text-[var(--tenant-primary)] transition-colors`}
             >
               Cek ongkir ke {selectedArea.district}, {selectedArea.city}
             </button>
@@ -381,13 +383,13 @@ export default function CheckoutPage() {
           {loadingShipping && (
             <div className="flex items-center justify-center py-8 gap-2">
               <Loader2 size={20} className="animate-spin text-[var(--tenant-primary)]" />
-              <p className="text-sm text-gray-500">Menghitung ongkir...</p>
+              <p className={`${fs.body} text-gray-500`}>Menghitung ongkir...</p>
             </div>
           )}
 
           {shippingOptions && shippingOptions.length === 0 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-              <p className="text-sm text-yellow-700">Tidak ada layanan pengiriman tersedia untuk area ini</p>
+              <p className={`${fs.body} text-yellow-700`}>Tidak ada layanan pengiriman tersedia untuk area ini</p>
             </div>
           )}
 
@@ -410,23 +412,23 @@ export default function CheckoutPage() {
                         className="accent-[var(--tenant-primary)]"
                       />
                       <div>
-                        <p className="text-sm font-medium text-gray-700">{opt.courier_name} {opt.service}</p>
-                        <p className="text-xs text-gray-500">{opt.etd}</p>
+                        <p className={`${fs.body} font-medium text-gray-700`}>{opt.courier_name} {opt.service}</p>
+                        <p className={`${fs.meta} text-gray-500`}>{opt.etd}</p>
                       </div>
                     </div>
-                    <span className="text-sm font-semibold text-gray-800">{formatRupiah(opt.price)}</span>
+                    <span className={`${fs.body} font-semibold text-gray-800`}>{formatRupiah(opt.price)}</span>
                   </label>
                 );
               })}
             </div>
           )}
 
-          {errors.shipping && <p className="text-xs text-red-500 mt-2">{errors.shipping}</p>}
+          {errors.shipping && <p className={`${fs.meta} text-red-500 mt-2`}>{errors.shipping}</p>}
         </section>
 
         {/* Ringkasan */}
-        <section className="bg-gray-50 rounded-2xl p-6 space-y-2 text-sm">
-          <h2 className="text-sm font-bold text-gray-800 mb-3">Ringkasan Pesanan</h2>
+        <section className={`bg-gray-50 rounded-2xl p-6 space-y-2 ${fs.body}`}>
+          <h2 className={`${fs.sectionHeading} text-gray-800 mb-3`}>Ringkasan Pesanan</h2>
           {items.map((item) => (
             <div key={`${item.product_id}::${item.variant_id}`} className="flex justify-between text-gray-600 py-1">
               <span className="line-clamp-1 flex-1 pr-2">
@@ -444,7 +446,7 @@ export default function CheckoutPage() {
               <span>Ongkir {selectedShipping ? `${selectedShipping.courier_name} ${selectedShipping.service}` : "-"}</span>
               <span>{selectedShipping ? formatRupiah(selectedShipping.price) : "-"}</span>
             </div>
-            <div className="flex justify-between font-bold text-gray-900 text-base pt-2">
+            <div className={`flex justify-between font-bold text-gray-900 ${fs.price} pt-2`}>
               <span>Total</span>
               <span className="text-[var(--tenant-primary)]">{formatRupiah(total)}</span>
             </div>
@@ -454,7 +456,7 @@ export default function CheckoutPage() {
         <button
           type="submit"
           disabled={loadingSubmit || !selectedShipping}
-          className="w-full flex items-center justify-center gap-2 bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] font-bold py-4 rounded-xl shadow-md hover:opacity-90 transition-opacity disabled:opacity-60"
+          className={`w-full flex items-center justify-center gap-2 bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] font-bold py-4 rounded-xl shadow-md hover:opacity-90 transition-opacity disabled:opacity-60 ${fs.body}`}
         >
           {loadingSubmit ? (
             <><Loader2 size={18} className="animate-spin" />Memproses Pesanan...</>
@@ -468,7 +470,7 @@ export default function CheckoutPage() {
 }
 
 function inputClass(hasError: boolean) {
-  return `w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition-colors ${
+  return `w-full px-4 py-2.5 rounded-xl border outline-none transition-colors ${
     hasError
       ? "border-red-400 focus:border-red-500 bg-red-50"
       : "border-gray-200 focus:border-[var(--tenant-primary)] bg-white"
@@ -492,13 +494,14 @@ function Field({
   error?: string;
   children: React.ReactNode;
 }) {
+  const fs = useFontScale();
   return (
     <div className="space-y-1">
-      <label className="text-xs font-semibold text-gray-600 block">
+      <label className={`${fs.label} text-gray-600 block`}>
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className={`${fs.meta} text-red-500`}>{error}</p>}
     </div>
   );
 }

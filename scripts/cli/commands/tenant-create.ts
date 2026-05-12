@@ -197,6 +197,18 @@ export function registerTenantCreate(program: Command) {
       abortOnCancel(fontVal);
       const font = fontVal as string;
 
+      const fontSizeVal = await p.select({
+        message: "Ukuran font",
+        options: [
+          { value: "regular", label: "Regular (default)" },
+          { value: "large", label: "Large (+1 step)" },
+          { value: "xl", label: "Extra Large (+2 steps)" },
+        ],
+        initialValue: "regular",
+      });
+      abortOnCancel(fontSizeVal);
+      const fontSize = fontSizeVal as string;
+
       // --- LOGO URL ---
       const logoVal = await p.text({
         message: "Logo URL (opsional)",
@@ -380,6 +392,7 @@ export function registerTenantCreate(program: Command) {
       console.log(`  Nama:     ${name}`);
       console.log(`  Warna:    ${primaryColor}`);
       console.log(`  Font:     ${font}`);
+      console.log(`  Ukuran:   ${fontSize}`);
       console.log(`  Layout:   ${chosenPreset.label}`);
       log.blank();
 
@@ -423,6 +436,7 @@ export function registerTenantCreate(program: Command) {
           instagram_handle: (instagramVal as string).trim() || null,
           email: (emailVal as string).trim() || null,
           font,
+          font_size: fontSize,
           payment_info: { bank: bankAccounts, qris_image_url: qrisImageUrl },
         });
         if (error) {

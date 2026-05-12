@@ -8,8 +8,10 @@ import { getCartStore } from "@/lib/cart/store";
 import { formatRupiah } from "@/lib/utils/price";
 import { SHIPPING_OPTIONS } from "@/types/schema-contract";
 import { useTenantSlug } from "@/lib/hooks/useTenantSlug";
+import { useFontScale } from "@/lib/context/font-scale-context";
 
 export default function CartPage() {
+  const fs = useFontScale();
   const router = useRouter();
   const slug = useTenantSlug();
 
@@ -30,10 +32,10 @@ export default function CartPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 flex flex-col items-center gap-4 text-center">
         <ShoppingBag size={56} className="text-gray-200" />
-        <p className="text-gray-500 font-medium">Keranjang kamu masih kosong</p>
+        <p className={`${fs.body} text-gray-500 font-medium`}>Keranjang kamu masih kosong</p>
         <Link
           href="/"
-          className="mt-2 inline-block bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] font-semibold px-6 py-3 rounded-xl text-sm hover:opacity-90 transition-opacity"
+          className={`mt-2 inline-block bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] font-semibold px-6 py-3 rounded-xl ${fs.body} hover:opacity-90 transition-opacity`}
         >
           Mulai Belanja
         </Link>
@@ -43,7 +45,7 @@ export default function CartPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <h1 className="text-lg font-bold text-gray-900 mb-5">
+      <h1 className={`${fs.pageTitle} text-gray-900 mb-5`}>
         Keranjang ({items.length} produk)
       </h1>
 
@@ -75,13 +77,13 @@ export default function CartPage() {
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug">
+              <p className={`${fs.body} font-medium text-gray-800 line-clamp-2 leading-snug`}>
                 {item.product_name}
               </p>
               {item.variant_label && (
-                <p className="text-xs text-gray-400 mt-0.5">{item.variant_label}</p>
+                <p className={`${fs.meta} text-gray-400 mt-0.5`}>{item.variant_label}</p>
               )}
-              <p className="text-sm font-bold text-[var(--tenant-primary)] mt-1">
+              <p className={`${fs.price} text-[var(--tenant-primary)] mt-1`}>
                 {formatRupiah(item.price)}
               </p>
 
@@ -96,7 +98,7 @@ export default function CartPage() {
                   >
                     <Minus size={12} />
                   </button>
-                  <span className="w-8 text-center text-sm font-semibold">
+                  <span className={`w-8 text-center ${fs.body} font-semibold`}>
                     {item.quantity}
                   </span>
                   <button
@@ -109,7 +111,7 @@ export default function CartPage() {
                   </button>
                 </div>
                 <div className="flex items-center gap-3">
-                  <p className="text-xs font-semibold text-gray-600">
+                  <p className={`${fs.body} font-semibold text-gray-600`}>
                     {formatRupiah(item.price * item.quantity)}
                   </p>
                   <button
@@ -126,12 +128,12 @@ export default function CartPage() {
       </div>
 
       {/* Summary */}
-      <div className="mt-6 bg-gray-50 rounded-2xl p-4 space-y-2 text-sm">
+      <div className={`mt-6 bg-gray-50 rounded-2xl p-4 space-y-2 ${fs.body}`}>
         <div className="flex justify-between text-gray-600">
           <span>Subtotal</span>
           <span className="font-semibold">{formatRupiah(subtotal)}</span>
         </div>
-        <div className="flex justify-between text-gray-400 text-xs">
+        <div className={`flex justify-between text-gray-400 ${fs.meta}`}>
           <span>Ongkir (belum dipilih)</span>
           <span>mulai {formatRupiah(minShipping)}</span>
         </div>
@@ -143,7 +145,7 @@ export default function CartPage() {
 
       <button
         onClick={() => router.push("/checkout")}
-        className="mt-4 w-full flex items-center justify-center gap-2 bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] font-bold py-4 rounded-xl shadow-md hover:opacity-90 transition-opacity"
+        className={`mt-4 w-full flex items-center justify-center gap-2 bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] font-bold py-4 rounded-xl shadow-md hover:opacity-90 transition-opacity ${fs.body}`}
       >
         Lanjut ke Checkout
         <ChevronRight size={18} />

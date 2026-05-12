@@ -30,6 +30,7 @@ export const mockCMS: TenantCMS = {
   email: "hello@warungkopinusantara.com",
   updated_at: "2024-01-01T00:00:00Z",
   font: "Inter",
+  font_size: "regular",
   payment_info: {
     bank: [
       { name: "BCA", account_number: "1234567890", account_name: "Warung Kopi Nusantara" },

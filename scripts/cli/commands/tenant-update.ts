@@ -74,6 +74,7 @@ export function registerTenantUpdate(program: Command) {
           { value: "tagline", label: `Tagline ${pc.dim(`(saat ini: ${cms.tagline || "-"})`)}` },
           { value: "primary_color", label: `Warna utama ${pc.dim(`(saat ini: ${cms.primary_color})`)}` },
           { value: "font", label: `Font ${pc.dim(`(saat ini: ${cms.font})`)}` },
+          { value: "font_size", label: `Ukuran font ${pc.dim(`(saat ini: ${cms.font_size ?? "regular"})`)}` },
           { value: "logo_url", label: `Logo URL ${pc.dim(`(saat ini: ${cms.logo_url || "-"})`)}` },
           { value: "email", label: `Email ${pc.dim(`(saat ini: ${cms.email || "-"})`)}` },
           { value: "whatsapp", label: `WhatsApp ${pc.dim(`(saat ini: ${cms.whatsapp_number || "-"})`)}` },
@@ -133,6 +134,20 @@ export function registerTenantUpdate(program: Command) {
           });
           abortOnCancel(val);
           cmsUpdates.font = val;
+        }
+
+        if (field === "font_size") {
+          const val = await p.select({
+            message: "Ukuran font",
+            options: [
+              { value: "regular", label: "Regular (default)" },
+              { value: "large", label: "Large (+1 step)" },
+              { value: "xl", label: "Extra Large (+2 steps)" },
+            ],
+            initialValue: cms.font_size ?? "regular",
+          });
+          abortOnCancel(val);
+          cmsUpdates.font_size = val;
         }
 
         if (field === "logo_url") {

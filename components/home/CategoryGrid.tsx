@@ -1,10 +1,7 @@
-import Link from "next/link";
+"use client";
 
-interface Category {
-  label: string;
-  icon: string;
-  slug: string;
-}
+import Link from "next/link";
+import { useFontScale } from "@/lib/context/font-scale-context";
 
 interface Props {
   categories: string[];
@@ -39,12 +36,13 @@ function getIcon(cat: string): string {
 }
 
 export default function CategoryGrid({ categories }: Props) {
+  const fs = useFontScale();
   if (categories.length === 0) return null;
 
   return (
     <section className="bg-white border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <h2 className="text-sm font-bold text-gray-800 mb-4">Kategori Produk</h2>
+        <h2 className={`${fs.sectionHeading} text-gray-800 mb-4`}>Kategori Produk</h2>
         <div className="flex gap-4 overflow-x-auto scrollbar-none pb-1">
           <Link
             href="/"
@@ -53,7 +51,7 @@ export default function CategoryGrid({ categories }: Props) {
             <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl group-hover:bg-[var(--tenant-primary-tint)] transition-colors">
               🏪
             </div>
-            <span className="text-[11px] font-medium text-gray-600 text-center w-16 truncate">
+            <span className={`${fs.category} font-medium text-gray-600 text-center w-16 truncate`}>
               Semua
             </span>
           </Link>
@@ -67,7 +65,7 @@ export default function CategoryGrid({ categories }: Props) {
               <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl group-hover:bg-[var(--tenant-primary-tint)] transition-colors">
                 {getIcon(cat)}
               </div>
-              <span className="text-[11px] font-medium text-gray-600 text-center w-16 truncate">
+              <span className={`${fs.category} font-medium text-gray-600 text-center w-16 truncate`}>
                 {cat}
               </span>
             </Link>

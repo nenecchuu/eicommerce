@@ -8,6 +8,7 @@ import TenantFooter from "@/components/tenant/TenantFooter";
 import WhatsAppFloat from "@/components/tenant/WhatsAppFloat";
 import StickyTopMessageSection from "@/components/sections/sticky-top-message";
 import { requireTenantDomain } from "@/lib/utils/tenant";
+import { FontScaleProvider } from "@/lib/context/font-scale-context";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -59,16 +60,18 @@ export default async function StoreLayout({
   } as React.CSSProperties;
 
   return (
-    <div style={cssVars} className="h-screen flex flex-col overflow-hidden">
-      {stickySection && <StickyTopMessageSection props={stickySection.props} />}
-      <TenantHeader tenant={data} />
-      <main className="flex-1 overflow-y-auto">
-        {children}
-        <TenantFooter cms={data.cms} />
-      </main>
-      {data.cms.whatsapp_number && (
-        <WhatsAppFloat number={data.cms.whatsapp_number} />
-      )}
-    </div>
+    <FontScaleProvider scale={data.cms.font_size ?? "regular"}>
+      <div style={cssVars} className="h-screen flex flex-col overflow-hidden">
+        {stickySection && <StickyTopMessageSection props={stickySection.props} />}
+        <TenantHeader tenant={data} />
+        <main className="flex-1 overflow-y-auto">
+          {children}
+          <TenantFooter cms={data.cms} />
+        </main>
+        {data.cms.whatsapp_number && (
+          <WhatsAppFloat number={data.cms.whatsapp_number} />
+        )}
+      </div>
+    </FontScaleProvider>
   );
 }
