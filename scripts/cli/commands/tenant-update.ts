@@ -31,7 +31,7 @@ export function registerTenantUpdate(program: Command) {
 
       const { data: tenant, error: tenantErr } = await supabase
         .from("tenants")
-        .select("id, slug, name, is_active")
+        .select("id, slug, name, is_active, is_demo")
         .eq("slug", slugVal as string)
         .single();
 
@@ -64,6 +64,7 @@ export function registerTenantUpdate(program: Command) {
       log.blank();
       console.log(`  Nama:   ${pc.bold(tenant.name)}`);
       console.log(`  Status: ${tenant.is_active ? pc.green("aktif") : pc.yellow("nonaktif")}`);
+      console.log(`  Demo:   ${tenant.is_demo ? pc.yellow("ya") : "tidak"}`);
       console.log(`  Origin: ${pc.dim(originLabel)}`);
       log.blank();
 
@@ -84,6 +85,7 @@ export function registerTenantUpdate(program: Command) {
           { value: "meta_pixel", label: `Meta Pixel ID ${pc.dim(`(saat ini: ${cms.meta_pixel_id || "-"})`)}` },
           { value: "google_tag_manager", label: `Google Tag Manager ID ${pc.dim(`(saat ini: ${cms.google_tag_manager_id || "-"})`)}` },
           { value: "is_active", label: `Status aktif ${pc.dim(`(saat ini: ${tenant.is_active ? "aktif" : "nonaktif"})`)}` },
+          { value: "is_demo", label: `Demo / belum terverifikasi ${pc.dim(`(saat ini: ${tenant.is_demo ? "ya" : "tidak"})`)}` },
         ],
         required: true,
       });
@@ -115,7 +117,7 @@ export function registerTenantUpdate(program: Command) {
         if (field === "tagline") {
           const val = await p.text({ message: "Tagline baru", defaultValue: cms.tagline ?? "" });
           abortOnCancel(val);
-          cmsUpdates.tagline = (val as string).trim() || null;
+          cmsUpdates.tagline = (val as string).trim() || "";
         }
 
         if (field === "primary_color") {
@@ -155,7 +157,7 @@ export function registerTenantUpdate(program: Command) {
         if (field === "logo_url") {
           const val = await p.text({ message: "Logo URL baru", defaultValue: cms.logo_url ?? "" });
           abortOnCancel(val);
-          cmsUpdates.logo_url = (val as string).trim() || null;
+          cmsUpdates.logo_url = (val as string).trim() || "";
         }
 
         if (field === "email") {
@@ -165,7 +167,7 @@ export function registerTenantUpdate(program: Command) {
             validate(v) { if (v && !EMAIL_REGEX.test(v)) return "Format email tidak valid"; },
           });
           abortOnCancel(val);
-          cmsUpdates.email = (val as string).trim() || null;
+          cmsUpdates.email = (val as string).trim() || "";
         }
 
         if (field === "whatsapp") {
@@ -175,13 +177,13 @@ export function registerTenantUpdate(program: Command) {
             validate(v) { if (v && !PHONE_REGEX.test(v)) return "Hanya digit, minimal 10 angka"; },
           });
           abortOnCancel(val);
-          cmsUpdates.whatsapp_number = (val as string).trim() || null;
+          cmsUpdates.whatsapp_number = (val as string).trim() || "";
         }
 
         if (field === "instagram") {
           const val = await p.text({ message: "Instagram handle (tanpa @)", defaultValue: cms.instagram_handle ?? "" });
           abortOnCancel(val);
-          cmsUpdates.instagram_handle = (val as string).trim() || null;
+          cmsUpdates.instagram_handle = (val as string).trim() || "";
         }
 
         if (field === "qris") {
@@ -199,7 +201,7 @@ export function registerTenantUpdate(program: Command) {
             },
           });
           abortOnCancel(val);
-          cmsUpdates.meta_pixel_id = (val as string).trim() || null;
+          cmsUpdates.meta_pixel_id = (val as string).trim() || "";
         }
 
         if (field === "google_tag_manager") {
@@ -211,13 +213,22 @@ export function registerTenantUpdate(program: Command) {
             },
           });
           abortOnCancel(val);
-          cmsUpdates.google_tag_manager_id = (val as string).trim().toUpperCase() || null;
+          cmsUpdates.google_tag_manager_id = (val as string).trim().toUpperCase() || "";
         }
 
         if (field === "is_active") {
           const val = await p.confirm({ message: "Aktifkan tenant?", initialValue: tenant.is_active });
           abortOnCancel(val);
           tenantUpdates.is_active = val;
+        }
+
+        if (field === "is_demo") {
+          const val = await p.confirm({
+            message: "Tampilkan watermark Demo?",
+            initialValue: tenant.is_demo,
+          });
+          abortOnCancel(val);
+          tenantUpdates.is_demo = val;
         }
 
         if (field === "origin_address") {

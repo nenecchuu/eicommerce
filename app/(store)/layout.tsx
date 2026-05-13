@@ -6,6 +6,7 @@ import { derivePrimaryShades, getContrastText } from "@/lib/utils/color";
 import TenantHeader from "@/components/tenant/TenantHeader";
 import TenantFooter from "@/components/tenant/TenantFooter";
 import WhatsAppFloat from "@/components/tenant/WhatsAppFloat";
+import DemoWatermark from "@/components/tenant/DemoWatermark";
 import StickyTopMessageSection from "@/components/sections/sticky-top-message";
 import { requireTenantDomain } from "@/lib/utils/tenant";
 import { FontScaleProvider } from "@/lib/context/font-scale-context";
@@ -75,6 +76,7 @@ export default async function StoreLayout({
         {data.cms.whatsapp_number && (
           <WhatsAppFloat number={data.cms.whatsapp_number} />
         )}
+        {data.is_demo && <DemoWatermark />}
       </div>
     </FontScaleProvider>
   );

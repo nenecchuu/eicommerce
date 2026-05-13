@@ -30,7 +30,7 @@ export function registerTenantDelete(program: Command) {
 
       const { data: tenant, error } = await supabase
         .from("tenants")
-        .select("id, slug, name, is_active")
+        .select("id, slug, name, is_active, is_demo")
         .eq("slug", slug)
         .single();
 
@@ -43,6 +43,7 @@ export function registerTenantDelete(program: Command) {
       console.log(`  Nama:   ${pc.bold(tenant.name)}`);
       console.log(`  Slug:   ${tenant.slug}`);
       console.log(`  Status: ${tenant.is_active ? pc.green("aktif") : pc.yellow("nonaktif")}`);
+      console.log(`  Demo:   ${tenant.is_demo ? pc.yellow("ya") : "tidak"}`);
       log.blank();
 
       const action = await p.select({

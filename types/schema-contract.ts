@@ -1,5 +1,5 @@
 // Source of truth until Supabase auto-gen types are set up.
-// Reflects actual Supabase schema as of migration create_tenant_origin_addresses (2026-05-06).
+// Reflects actual Supabase schema as of migration add_tenant_demo_flag (2026-05-13).
 
 export interface TenantOriginAddress {
   tenant_id: string;
@@ -28,6 +28,7 @@ export interface Tenant {
   slug: string;
   name: string;
   is_active: boolean;
+  is_demo: boolean;
   created_at: string;
   updated_at: string;
 }

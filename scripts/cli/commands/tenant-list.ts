@@ -9,7 +9,7 @@ export function registerTenantList(program: Command) {
     .action(async () => {
       const { data: tenants, error } = await supabase
         .from("tenants")
-        .select("id, slug, name, is_active, created_at")
+        .select("id, slug, name, is_active, is_demo, created_at")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -38,6 +38,7 @@ export function registerTenantList(program: Command) {
           Slug: t.slug,
           Nama: t.name,
           Status: t.is_active ? "aktif" : "nonaktif",
+          Demo: t.is_demo ? "ya" : "tidak",
           Produk: String(countMap[t.id] ?? 0),
           Dibuat: t.created_at.slice(0, 10),
         }))

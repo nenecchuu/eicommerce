@@ -169,6 +169,13 @@ export function registerTenantCreate(program: Command) {
       abortOnCancel(nameVal);
       const name = nameVal as string;
 
+      const isDemoVal = await p.confirm({
+        message: "Tandai sebagai demo / belum terverifikasi?",
+        initialValue: true,
+      });
+      abortOnCancel(isDemoVal);
+      const isDemo = isDemoVal as boolean;
+
       // --- TAGLINE ---
       const taglineVal = await p.text({
         message: "Tagline toko (opsional)",
@@ -215,7 +222,7 @@ export function registerTenantCreate(program: Command) {
         placeholder: "https://...",
       });
       abortOnCancel(logoVal);
-      const logoUrl = (logoVal as string).trim() || null;
+      const logoUrl = (logoVal as string).trim() || "";
 
       // --- EMAIL ---
       const emailVal = await p.text({
@@ -384,7 +391,7 @@ export function registerTenantCreate(program: Command) {
         },
       });
       abortOnCancel(metaPixelVal);
-      const metaPixelId = (metaPixelVal as string).trim() || null;
+      const metaPixelId = (metaPixelVal as string).trim() || "";
 
       const gtmVal = await p.text({
         message: "Google Tag Manager ID (opsional, dari GTM seller)",
@@ -394,7 +401,7 @@ export function registerTenantCreate(program: Command) {
         },
       });
       abortOnCancel(gtmVal);
-      const googleTagManagerId = (gtmVal as string).trim().toUpperCase() || null;
+      const googleTagManagerId = (gtmVal as string).trim().toUpperCase() || "";
 
       // --- LAYOUT HOMEPAGE ---
       const layoutVal = await p.select({
@@ -409,6 +416,7 @@ export function registerTenantCreate(program: Command) {
       console.log(pc.bold("Ringkasan:"));
       console.log(`  Slug:     ${pc.cyan(slug)}`);
       console.log(`  Nama:     ${name}`);
+      console.log(`  Demo:     ${isDemo ? pc.yellow("ya") : "tidak"}`);
       console.log(`  Warna:    ${primaryColor}`);
       console.log(`  Font:     ${font}`);
       console.log(`  Ukuran:   ${fontSize}`);
@@ -434,12 +442,13 @@ export function registerTenantCreate(program: Command) {
         spinner.start("Menyimpan tenant...");
         const { data, error } = await supabase
           .from("tenants")
-          .insert({ slug, name, is_active: true })
+          .insert({ slug, name, is_active: true, is_demo: isDemo })
           .select("id, slug")
           .single();
         if (error) { spinner.stop("Gagal"); return { error }; }
         tenantId = data.id;
         tenantSlug = data.slug;
+        spinner.stop("Tenant tersimpan");
       });
 
       // --- INSERT TENANT CMS ---
@@ -449,13 +458,13 @@ export function registerTenantCreate(program: Command) {
           tenant_id: tenantId,
           template_variant: "general",
           logo_url: logoUrl,
-          favicon_url: null,
+          favicon_url: "",
           primary_color: primaryColor,
-          tagline: (taglineVal as string).trim() || null,
-          description: null,
-          whatsapp_number: (whatsappVal as string).trim() || null,
-          instagram_handle: (instagramVal as string).trim() || null,
-          email: (emailVal as string).trim() || null,
+          tagline: (taglineVal as string).trim() || "",
+          description: "",
+          whatsapp_number: (whatsappVal as string).trim() || "",
+          instagram_handle: (instagramVal as string).trim() || "",
+          email: (emailVal as string).trim() || "",
           font,
           font_size: fontSize,
           payment_info: { bank: bankAccounts, qris_image_url: qrisImageUrl },
@@ -467,6 +476,7 @@ export function registerTenantCreate(program: Command) {
           await supabase.from("tenants").delete().eq("id", tenantId);
           return { error };
         }
+        spinner.stop("CMS config tersimpan");
       });
 
       // --- INSERT HOMEPAGE CONFIG ---
@@ -494,7 +504,7 @@ export function registerTenantCreate(program: Command) {
           log.warn(`origin_address gagal: ${originError.message}`);
           log.dim(`Fix manual via: make cli tenant:update --tenant=${tenantSlug}`);
         } else {
-          spinner.stop("Selesai");
+          spinner.stop("Alamat asal tersimpan");
         }
       }
 
