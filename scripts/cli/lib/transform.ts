@@ -1,4 +1,3 @@
-import { generateSlug } from "./slugify.js";
 import type { ShopeeProduct, ShopeeModel, ShopeeTierVariation } from "./shopee-schema.js";
 
 export interface ProductRow {
@@ -26,6 +25,30 @@ export interface VariantRow {
   available_qty: number;
   is_active: boolean;
   images: string[];
+}
+
+function normalizeVariantText(value: string | null | undefined): string {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function isDefaultOnlyVariation(product: ShopeeProduct): boolean {
+  const tierVariations = product.tier_variations ?? [];
+  const models = product.models ?? [];
+
+  if (tierVariations.length !== 1 || models.length > 1) return false;
+
+  const variation = tierVariations[0];
+  const model = models[0];
+  const variationName = normalizeVariantText(variation.name);
+  const options = variation.options.map(normalizeVariantText).filter(Boolean);
+  const modelName = normalizeVariantText(model?.name);
+
+  return (
+    variationName === "default" &&
+    options.length === 1 &&
+    options[0] === "default" &&
+    (!model || modelName === "" || modelName === "default")
+  );
 }
 
 function resolveVariantName(
@@ -75,7 +98,8 @@ export function transformProduct(
   displayOrder: number
 ): ProductRow {
   const tierVariations = product.tier_variations ?? [];
-  const hasVariant = tierVariations.length > 0 && (product.models?.length ?? 0) > 1;
+  const effectiveTierVariations = isDefaultOnlyVariation(product) ? [] : tierVariations;
+  const hasVariant = effectiveTierVariations.length > 0 && (product.models?.length ?? 0) > 1;
 
   return {
     tenant_id: tenantId,
@@ -87,9 +111,9 @@ export function transformProduct(
       url,
       alt: `${product.name} - gambar ${i + 1}`,
     })),
-    attr1_name: tierVariations[0]?.name ?? "",
-    attr2_name: tierVariations[1]?.name ?? "",
-    attr3_name: tierVariations[2]?.name ?? "",
+    attr1_name: effectiveTierVariations[0]?.name ?? "",
+    attr2_name: effectiveTierVariations[1]?.name ?? "",
+    attr3_name: effectiveTierVariations[2]?.name ?? "",
     has_variant: hasVariant,
     shopee_url: product.product_url,
     is_active: true,
@@ -103,17 +127,20 @@ export function transformVariants(
   ignoreStock = false
 ): VariantRow[] {
   const stock = ignoreStock ? 1000 : 0;
+  const defaultOnlyModel = isDefaultOnlyVariation(product)
+    ? product.models?.[0]
+    : undefined;
 
-  if (!product.models || product.models.length === 0) {
+  if (!product.models || product.models.length === 0 || defaultOnlyModel) {
     return [
       {
         tenant_id: tenantId,
         attr1_val: "",
         attr2_val: "",
         attr3_val: "",
-        price: product.price,
-        available_qty: stock,
-        is_active: true,
+        price: defaultOnlyModel?.price ?? product.price,
+        available_qty: ignoreStock ? 1000 : (defaultOnlyModel?.stock ?? stock),
+        is_active: defaultOnlyModel?.has_stock !== false,
         images: product.images ?? [],
       },
     ];
