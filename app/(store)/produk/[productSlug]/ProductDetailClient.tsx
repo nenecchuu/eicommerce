@@ -341,11 +341,6 @@ export default function ProductDetailClient({ product, tenantSlug }: Props) {
                 </div>
               )}
 
-              {selectedVariant && (
-                <p className={`${fs.meta} text-gray-400`}>
-                  Stok: {selectedVariant.available_qty > 0 ? `${selectedVariant.available_qty} tersisa` : "Habis"}
-                </p>
-              )}
             </div>
           )}
 
