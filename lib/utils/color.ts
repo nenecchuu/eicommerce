@@ -1,4 +1,6 @@
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+type Rgb = { r: number; g: number; b: number };
+
+function hexToRgb(hex: string): Rgb | null {
   const cleaned = hex.replace("#", "");
   const full =
     cleaned.length === 3
@@ -7,6 +9,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
           .map((c) => c + c)
           .join("")
       : cleaned;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
   const int = parseInt(full, 16);
   if (isNaN(int)) return null;
   return {
@@ -25,12 +28,59 @@ function rgbToHex(r: number, g: number, b: number): string {
   );
 }
 
+function relativeChannel(value: number): number {
+  const normalized = value / 255;
+  return normalized <= 0.03928
+    ? normalized / 12.92
+    : Math.pow((normalized + 0.055) / 1.055, 2.4);
+}
+
+function relativeLuminance(rgb: Rgb): number {
+  return (
+    0.2126 * relativeChannel(rgb.r) +
+    0.7152 * relativeChannel(rgb.g) +
+    0.0722 * relativeChannel(rgb.b)
+  );
+}
+
+function contrastRatio(a: Rgb, b: Rgb): number {
+  const lighter = Math.max(relativeLuminance(a), relativeLuminance(b));
+  const darker = Math.min(relativeLuminance(a), relativeLuminance(b));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function mix(a: Rgb, b: Rgb, amount: number): Rgb {
+  return {
+    r: a.r + (b.r - a.r) * amount,
+    g: a.g + (b.g - a.g) * amount,
+    b: a.b + (b.b - a.b) * amount,
+  };
+}
+
 export function getContrastText(hex: string): "black" | "white" {
   const rgb = hexToRgb(hex);
   if (!rgb) return "black";
-  // Perceived luminance
-  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-  return luminance > 0.5 ? "black" : "white";
+  const blackContrast = contrastRatio(rgb, { r: 0, g: 0, b: 0 });
+  const whiteContrast = contrastRatio(rgb, { r: 255, g: 255, b: 255 });
+  return blackContrast > whiteContrast ? "black" : "white";
+}
+
+export function getAccessiblePrimaryColor(hex: string): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+
+  const white = { r: 255, g: 255, b: 255 };
+  if (contrastRatio(rgb, white) >= 4.5) return hex;
+
+  const black = { r: 0, g: 0, b: 0 };
+  for (let amount = 0.02; amount <= 1; amount += 0.02) {
+    const candidate = mix(rgb, black, amount);
+    if (contrastRatio(candidate, white) >= 4.5) {
+      return rgbToHex(candidate.r, candidate.g, candidate.b);
+    }
+  }
+
+  return "#000000";
 }
 
 export function derivePrimaryShades(hex: string): {
