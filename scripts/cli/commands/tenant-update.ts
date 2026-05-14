@@ -36,7 +36,7 @@ export function registerTenantUpdate(program: Command) {
         .single();
 
       if (tenantErr || !tenant) {
-        log.error(`Tenant '${slugVal}' tidak ditemukan.`);
+        log.error(`Tenant '${String(slugVal)}' tidak ditemukan.`);
         process.exit(1);
       }
 
@@ -47,7 +47,7 @@ export function registerTenantUpdate(program: Command) {
         .single();
 
       if (cmsErr || !cms) {
-        log.error(`CMS config untuk tenant '${slugVal}' tidak ditemukan.`);
+        log.error(`CMS config untuk tenant '${String(slugVal)}' tidak ditemukan.`);
         process.exit(1);
       }
 
@@ -124,7 +124,7 @@ export function registerTenantUpdate(program: Command) {
           const val = await p.text({
             message: "Warna utama (hex)",
             defaultValue: cms.primary_color,
-            validate(v) { if (!HEX_REGEX.test(v)) return "Format hex tidak valid (contoh: #FF5722)"; },
+            validate(v) { if (!HEX_REGEX.test(String(v))) return "Format hex tidak valid (contoh: #FF5722)"; },
           });
           abortOnCancel(val);
           cmsUpdates.primary_color = val;

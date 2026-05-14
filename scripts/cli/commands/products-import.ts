@@ -120,7 +120,7 @@ export function registerProductsImport(program: Command) {
           .single();
 
         if (tenantErr || !data) {
-          log.error(`Tenant '${slugVal}' gagal di-resolve: ${tenantErr?.message ?? "tidak ditemukan"}`);
+          log.error(`Tenant '${String(slugVal)}' gagal di-resolve: ${tenantErr?.message ?? "tidak ditemukan"}`);
           const action = await promptRetryOrAbort("resolve tenant");
           if (action === "abort") process.exit(1);
         } else {
@@ -206,8 +206,8 @@ export function registerProductsImport(program: Command) {
               .single();
 
             if (existingProd) {
-              await withRetry(() =>
-                supabase.from("products").update({
+              await withRetry(async () => {
+                const r = await supabase.from("products").update({
                   name: productRow.name,
                   description: productRow.description,
                   images: productRow.images,
@@ -215,32 +215,37 @@ export function registerProductsImport(program: Command) {
                   attr2_name: productRow.attr2_name,
                   attr3_name: productRow.attr3_name,
                   has_variant: productRow.has_variant,
-                }).eq("id", existingProd.id)
-                .then((r) => { if (r.error) throw r.error; return r; })
-              );
-              await withRetry(() =>
-                supabase.from("product_variants").delete().eq("product_id", existingProd.id)
-                .then((r) => { if (r.error) throw r.error; return r; })
-              );
-              await withRetry(() =>
-                supabase.from("product_variants")
-                .insert(variantRows.map((v) => ({ ...v, product_id: existingProd.id })))
-                .then((r) => { if (r.error) throw r.error; return r; })
-              );
+                }).eq("id", existingProd.id);
+                if (r.error) throw r.error;
+                return r;
+              });
+              await withRetry(async () => {
+                const r = await supabase.from("product_variants").delete().eq("product_id", existingProd.id);
+                if (r.error) throw r.error;
+                return r;
+              });
+              await withRetry(async () => {
+                const r = await supabase.from("product_variants")
+                  .insert(variantRows.map((v) => ({ ...v, product_id: existingProd.id })));
+                if (r.error) throw r.error;
+                return r;
+              });
               imported++;
               importedSlugs.push(slug);
             }
           } else {
-            const { data: newProd } = await withRetry(() =>
-              supabase.from("products").insert(productRow).select("id").single()
-              .then((r) => { if (r.error) throw r.error; return r; })
-            );
+            const { data: newProd } = await withRetry(async () => {
+              const r = await supabase.from("products").insert(productRow).select("id").single();
+              if (r.error) throw r.error;
+              return r;
+            });
             if (newProd) {
-              await withRetry(() =>
-                supabase.from("product_variants")
-                .insert(variantRows.map((v) => ({ ...v, product_id: newProd.id })))
-                .then((r) => { if (r.error) throw r.error; return r; })
-              );
+              await withRetry(async () => {
+                const r = await supabase.from("product_variants")
+                  .insert(variantRows.map((v) => ({ ...v, product_id: newProd.id })));
+                if (r.error) throw r.error;
+                return r;
+              });
               imported++;
               importedSlugs.push(slug);
             }

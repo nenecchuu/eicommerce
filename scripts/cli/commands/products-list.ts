@@ -32,7 +32,7 @@ export function registerProductsList(program: Command) {
         .single();
 
       if (tenantErr || !tenant) {
-        log.error(`Tenant '${slugVal}' tidak ditemukan.`);
+        log.error(`Tenant '${String(slugVal)}' tidak ditemukan.`);
         process.exit(1);
       }
 
