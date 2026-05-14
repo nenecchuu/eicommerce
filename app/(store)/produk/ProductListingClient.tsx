@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
@@ -39,6 +39,7 @@ export default function ProductListingClient({
 
   const [searchInput, setSearchInput] = useState(initialFilters.search ?? "");
   const [showFilters, setShowFilters] = useState(false);
+  const lastTrackedSearch = useRef<string | null>(null);
 
   const currentFilters = {
     search: searchParams.get("q") || "",
@@ -61,10 +62,12 @@ export default function ProductListingClient({
     if ((updates.page ?? currentFilters.page) > 1) params.set("page", (updates.page ?? currentFilters.page).toString());
 
     Object.entries(updates).forEach(([key, value]) => {
+      const paramKey = key === "search" ? "q" : key;
+
       if (value === undefined || value === "") {
-        params.delete(key);
+        params.delete(paramKey);
       } else {
-        params.set(key, value.toString());
+        params.set(paramKey, value.toString());
       }
     });
 
@@ -74,11 +77,6 @@ export default function ProductListingClient({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchInput.trim()) {
-      pixel.track("Search", {
-        search_string: searchInput.trim(),
-      });
-    }
     updateURL({ search: searchInput || undefined, page: 1 });
   };
 
@@ -99,6 +97,16 @@ export default function ProductListingClient({
     currentFilters.minPrice ||
     currentFilters.maxPrice ||
     currentFilters.sort !== "terbaru";
+
+  useEffect(() => {
+    const search = currentFilters.search.trim();
+    if (!search || lastTrackedSearch.current === search) return;
+
+    lastTrackedSearch.current = search;
+    pixel.track("Search", {
+      search_string: search,
+    });
+  }, [currentFilters.search, pixel]);
 
   useEffect(() => {
     gtm.viewItemList({

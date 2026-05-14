@@ -7,11 +7,19 @@ import MainBar from "./header/MainBar";
 import SearchOverlay from "./header/SearchOverlay";
 import MobileMenu from "./header/MobileMenu";
 import type { NavLink } from "./header/types";
-import { useMetaPixel } from "@/lib/hooks/useMetaPixel";
 
 interface Props {
   tenant: TenantWithCMS;
   categories?: string[];
+}
+
+function isFocusedCommercePath(pathname: string) {
+  return (
+    pathname === "/keranjang" ||
+    pathname === "/checkout" ||
+    pathname.startsWith("/checkout/") ||
+    pathname.startsWith("/order/")
+  );
 }
 
 function buildNavLinks(categories: string[]): NavLink[] {
@@ -35,7 +43,6 @@ function useMounted() {
 export default function TenantHeader({ tenant, categories = [] }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const pixel = useMetaPixel();
 
   const mounted = useMounted();
   const [search, setSearch] = useState("");
@@ -49,17 +56,19 @@ export default function TenantHeader({ tenant, categories = [] }: Props) {
   });
   const searchOpen = searchOpenState.open && searchOpenState.pathname === pathname;
   const menuOpen = menuOpenState.open && menuOpenState.pathname === pathname;
+  const focusedCommerce = isFocusedCommercePath(pathname);
+  const showSearchOpen = searchOpen && !focusedCommerce;
+  const showMenuOpen = menuOpen && !focusedCommerce;
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    document.body.style.overflow = showMenuOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [menuOpen]);
+  }, [showMenuOpen]);
 
   const handleSearch = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const q = search.trim();
     if (!q) return;
-    pixel.track("Search", { search_string: q });
     router.push(`/produk?q=${encodeURIComponent(q)}`);
     setSearch("");
     setSearchOpenState({ open: false, pathname });
@@ -80,10 +89,11 @@ export default function TenantHeader({ tenant, categories = [] }: Props) {
           onSearchSubmit={handleSearch}
           onOpenSearch={() => setSearchOpenState({ open: true, pathname })}
           onOpenMenu={() => setMenuOpenState({ open: true, pathname })}
+          focusedCommerce={focusedCommerce}
         />
       </header>
 
-      {searchOpen && (
+      {showSearchOpen && (
         <SearchOverlay
           search={search}
           onSearchChange={setSearch}
@@ -92,7 +102,7 @@ export default function TenantHeader({ tenant, categories = [] }: Props) {
         />
       )}
 
-      {menuOpen && (
+      {showMenuOpen && (
         <MobileMenu
           tenant={tenant}
           navLinks={navLinks}

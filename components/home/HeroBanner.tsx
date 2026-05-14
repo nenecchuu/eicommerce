@@ -43,7 +43,7 @@ export default function HeroBanner() {
 
   return (
     <section className="relative overflow-hidden">
-      <div className="relative w-full aspect-[4/3] sm:aspect-[16/7]">
+      <div className="relative w-full aspect-[16/7]">
         {SLIDES.map((slide, i) => (
           <div
             key={slide.id}

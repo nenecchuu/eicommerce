@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTenantByDomain } from "@/lib/queries/getTenant";
-import { getOrderByIdAndEmail, getOrderStatusLabel } from "@/lib/queries/getOrder";
+import { getOrderByIdAndEmail } from "@/lib/queries/getOrder";
 import { requireTenantDomain } from "@/lib/utils/tenant";
 import OrderPageClient from "./OrderPageClient";
 
@@ -34,7 +34,6 @@ export default async function OrderPage({ params, searchParams }: Props) {
   return (
     <OrderPageClient
       orderId={id}
-      tenantName={tenantData.name}
       initialEmail={email}
       order={order}
     />

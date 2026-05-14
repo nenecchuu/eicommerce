@@ -2,34 +2,36 @@
 
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
-
-declare global {
-  interface Window {
-    fbq: (...args: unknown[]) => void;
-    _fbq: unknown;
-  }
-}
+import { useEffect, useRef, Suspense } from "react";
+import { flushMetaPixelQueue, trackMetaPixel } from "@/lib/hooks/useMetaPixel";
 
 function PageViewTracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const skippedInitialPageView = useRef(false);
 
   useEffect(() => {
-    if (typeof window.fbq === "function") {
-      window.fbq("track", "PageView");
+    if (!skippedInitialPageView.current) {
+      skippedInitialPageView.current = true;
+      return;
     }
+
+    trackMetaPixel("PageView");
   }, [pathname, searchParams]);
 
   return null;
 }
 
 export default function MetaPixel({ pixelId }: { pixelId: string }) {
+  const id = pixelId.trim();
+  if (!id) return null;
+
   return (
     <>
       <Script
         id="meta-pixel"
         strategy="afterInteractive"
+        onReady={flushMetaPixelQueue}
         dangerouslySetInnerHTML={{
           __html: `
             !function(f,b,e,v,n,t,s)
@@ -40,7 +42,12 @@ export default function MetaPixel({ pixelId }: { pixelId: string }) {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${pixelId}');
+            fbq('init', ${JSON.stringify(id)});
+            (window.__metaPixelQueue || []).forEach(function(item) {
+              fbq(item[0], item[1], item[2]);
+            });
+            window.__metaPixelQueue = [];
+            fbq('track', 'PageView');
           `,
         }}
       />
@@ -50,7 +57,7 @@ export default function MetaPixel({ pixelId }: { pixelId: string }) {
           height="1"
           width="1"
           style={{ display: "none" }}
-          src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
+          src={`https://www.facebook.com/tr?id=${id}&ev=PageView&noscript=1`}
           alt=""
         />
       </noscript>

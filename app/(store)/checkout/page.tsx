@@ -77,6 +77,7 @@ export default function CheckoutPage() {
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("bank_transfer");
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [redirectingToSuccess, setRedirectingToSuccess] = useState(false);
 
   const [tenant, setTenant] = useState<TenantWithCMS | null>(null);
 
@@ -240,8 +241,9 @@ export default function CheckoutPage() {
         currency: "IDR",
         payment_method: paymentMethod,
       });
-      clearCart();
-      router.push(`/checkout/sukses?order=${data.order_id}&method=${paymentMethod}`);
+      setRedirectingToSuccess(true);
+      router.push(`/checkout/sukses/${data.order_id}`);
+      window.setTimeout(() => clearCart(), 0);
     } catch (err) {
       console.error("[Checkout] Submit error:", err);
       alert("Terjadi kesalahan. Silakan coba lagi.");
@@ -251,6 +253,15 @@ export default function CheckoutPage() {
   };
 
   if (!slug) { router.replace("/"); return null; }
+  if (items.length === 0 && redirectingToSuccess) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-20 flex flex-col items-center gap-3 text-gray-500">
+        <Loader2 size={24} className="animate-spin text-[var(--tenant-primary)]" />
+        <p className={`${fs.body}`}>Mengarahkan ke detail pesanan...</p>
+      </div>
+    );
+  }
+
   if (items.length === 0) { router.replace("/keranjang"); return null; }
 
   return (

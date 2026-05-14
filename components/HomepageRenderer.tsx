@@ -7,11 +7,11 @@ import { SECTION_TYPES } from "@/components/sections/index";
 import HeroBannerSection from "@/components/sections/hero-banner";
 
 // Everything below the fold — lazy load to reduce initial JS bundle
+const WideBannerSection = dynamic(() => import("@/components/sections/wide-banner"));
 const PromoBannerSection = dynamic(() => import("@/components/sections/promo-banner"));
 const TrustBadgesSection = dynamic(() => import("@/components/sections/trust-badges"));
 const CategoryListSection = dynamic(() => import("@/components/sections/category-list"));
 const TestimonialSection = dynamic(() => import("@/components/sections/testimonial"));
-const StickyTopMessageSection = dynamic(() => import("@/components/sections/sticky-top-message"));
 const ProductListSection = dynamic(() => import("@/components/sections/product-list"));
 
 interface Props {
@@ -27,6 +27,8 @@ function renderSection(section: Section, tenantId: string, allProducts: ProductW
   switch (section.type) {
     case "hero_banner":
       return <HeroBannerSection props={section.props} />;
+    case "wide_banner":
+      return <WideBannerSection props={section.props} />;
     case "promo_banner":
       return <PromoBannerSection props={section.props} />;
     case "trust_badges":
@@ -35,8 +37,6 @@ function renderSection(section: Section, tenantId: string, allProducts: ProductW
       return <CategoryListSection props={section.props} />;
     case "testimonial":
       return <TestimonialSection props={section.props} />;
-    case "sticky_top_message":
-      return <StickyTopMessageSection props={section.props} />;
     case "product_list":
       return (
         <ProductListSection

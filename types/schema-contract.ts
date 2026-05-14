@@ -116,6 +116,7 @@ export type PaymentMethod = "bank_transfer" | "qris";
 
 export interface Order {
   id: string;
+  order_number: string | null;
   tenant_id: string;
   customer_name: string;
   customer_phone: string;

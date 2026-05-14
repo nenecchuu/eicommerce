@@ -8,22 +8,35 @@ export interface ProductListProps {
   show_view_all: boolean;
 }
 
-export interface HeroBannerProps {
+export interface BannerImageProps {
   image_url: string;
   image_url_mobile?: string;
+  link_url?: string;
+  alt?: string;
+}
+
+export interface BannerContentProps {
   title?: string;
   subtitle?: string;
   cta_label?: string;
   cta_url?: string;
 }
 
-export interface PromoBannerItem {
-  image_url: string;
-  link_url?: string;
+export interface HeroBannerItem extends BannerImageProps, BannerContentProps {}
+
+export interface HeroBannerProps {
+  banners: [HeroBannerItem, ...HeroBannerItem[]];
+  autoplay_ms?: number;
 }
 
+export type WideBannerProps = BannerImageProps & BannerContentProps;
+
+export type PromoBannerItem = BannerImageProps;
+
 export interface PromoBannerProps {
-  banners: [PromoBannerItem] | [PromoBannerItem, PromoBannerItem] | [PromoBannerItem, PromoBannerItem, PromoBannerItem];
+  display?: "grid" | "carousel";
+  banners: [PromoBannerItem, ...PromoBannerItem[]];
+  autoplay_ms?: number;
 }
 
 export interface TrustBadge {
@@ -76,6 +89,7 @@ interface SectionBase {
 export type Section =
   | (SectionBase & { type: "product_list";      props: ProductListProps })
   | (SectionBase & { type: "hero_banner";        props: HeroBannerProps })
+  | (SectionBase & { type: "wide_banner";        props: WideBannerProps })
   | (SectionBase & { type: "promo_banner";       props: PromoBannerProps })
   | (SectionBase & { type: "trust_badges";       props: TrustBadgesProps })
   | (SectionBase & { type: "category_list";      props: CategoryListProps })

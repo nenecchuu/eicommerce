@@ -1,7 +1,19 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import type { TenantCMS } from "@/types/schema-contract";
 
 interface Props {
   cms: TenantCMS;
+}
+
+function isFocusedCommercePath(pathname: string) {
+  return (
+    pathname === "/keranjang" ||
+    pathname === "/checkout" ||
+    pathname.startsWith("/checkout/") ||
+    pathname.startsWith("/order/")
+  );
 }
 
 const PAYMENT_METHODS = [
@@ -17,6 +29,10 @@ const PAYMENT_METHODS = [
 ];
 
 export default function TenantFooter({ cms }: Props) {
+  const pathname = usePathname();
+
+  if (isFocusedCommercePath(pathname)) return null;
+
   return (
     <footer className="border-t bg-gray-900 text-gray-300 mt-12">
       <div className="max-w-6xl mx-auto px-4 py-10">

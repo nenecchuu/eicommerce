@@ -1,4 +1,3 @@
-import { unstable_cache } from "next/cache";
 import { createStaticClient } from "@/lib/supabase/static";
 import type { TenantWithCMS } from "@/types/schema-contract";
 
@@ -40,14 +39,8 @@ async function fetchTenant(slug: string): Promise<TenantWithCMS | null> {
   return { ...tenant, cms, origin_address: origin_address ?? null };
 }
 
-const getCachedTenant = unstable_cache(
-  fetchTenant,
-  ["tenant"],
-  { revalidate: 3600, tags: ["tenant"] }
-);
-
 export async function getTenant(slug: string): Promise<TenantWithCMS | null> {
-  return getCachedTenant(slug);
+  return fetchTenant(slug);
 }
 
 export async function getTenantByDomain(domain: string): Promise<TenantWithCMS | null> {
@@ -56,5 +49,5 @@ export async function getTenantByDomain(domain: string): Promise<TenantWithCMS |
   const slug = extractSlugFromDomain(domain);
   if (!slug) return null;
 
-  return getCachedTenant(slug);
+  return fetchTenant(slug);
 }

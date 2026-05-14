@@ -20,12 +20,12 @@ const FONT_OPTIONS = [
 
 const HOMEPAGE_PRESETS: Record<string, { label: string; sections: unknown[] }> = {
   fashion: {
-    label: "Fashion — Hero + Kategori + Produk + Promo banner + Trust badges",
+    label: "Fashion — Hero carousel + Kategori + Produk + Promo banner + Trust badges",
     sections: [
-      { id: "hero", type: "hero_banner", visible: true, props: { image_url: "", title: "", subtitle: "", cta_label: "Lihat Koleksi", cta_url: "/produk" } },
+      { id: "hero", type: "hero_banner", visible: true, props: { banners: [{ image_url: "" }], autoplay_ms: 5000 } },
       { id: "categories", type: "category_list", visible: true, props: { title: "Kategori", categories: [] } },
       { id: "products_new", type: "product_list", visible: true, props: { title: "Produk Terbaru", layout: "card", source: "bestseller", item_limit: 12, show_view_all: true } },
-      { id: "promo", type: "promo_banner", visible: true, props: { banners: [{ image_url: "", link_url: "/produk" }] } },
+      { id: "promo", type: "promo_banner", visible: true, props: { display: "grid", banners: [{ image_url: "" }] } },
       { id: "trust", type: "trust_badges", visible: true, props: { badges: [
         { key: "secure_transaction", label: "Transaksi Aman", active: true },
         { key: "free_shipping", label: "Gratis Ongkir", active: true },
@@ -34,12 +34,12 @@ const HOMEPAGE_PRESETS: Record<string, { label: string; sections: unknown[] }> =
     ],
   },
   promo: {
-    label: "Promo-first — Sticky + Hero + Flash sale + Promo banner + Trust badges",
+    label: "Promo-first — Sticky + Hero carousel + Flash sale + Promo banner + Trust badges",
     sections: [
       { id: "sticky", type: "sticky_top_message", visible: true, props: { text: "🔥 Flash Sale Hari Ini!", link_url: "/produk", link_label: "Lihat Semua", dismissible: true } },
-      { id: "hero", type: "hero_banner", visible: true, props: { image_url: "", title: "", subtitle: "", cta_label: "Belanja Sekarang", cta_url: "/produk" } },
+      { id: "hero", type: "hero_banner", visible: true, props: { banners: [{ image_url: "" }], autoplay_ms: 5000 } },
       { id: "flash_sale", type: "product_list", visible: true, props: { title: "Flash Sale", layout: "card", source: "flash_sale", item_limit: 8, show_view_all: true } },
-      { id: "promo", type: "promo_banner", visible: true, props: { banners: [{ image_url: "", link_url: "/produk" }] } },
+      { id: "promo", type: "promo_banner", visible: true, props: { display: "carousel", banners: [{ image_url: "" }], autoplay_ms: 4500 } },
       { id: "trust", type: "trust_badges", visible: true, props: { badges: [
         { key: "secure_transaction", label: "Transaksi Aman", active: true },
         { key: "happy_buyers", label: "Ribuan Pembeli Puas", active: true },
@@ -48,9 +48,9 @@ const HOMEPAGE_PRESETS: Record<string, { label: string; sections: unknown[] }> =
     ],
   },
   catalog: {
-    label: "Katalog — Hero + Kategori + Grid produk + Trust badges + Testimoni",
+    label: "Katalog — Hero carousel + Kategori + Grid produk + Trust badges + Testimoni",
     sections: [
-      { id: "hero", type: "hero_banner", visible: true, props: { image_url: "", title: "", subtitle: "", cta_label: "Lihat Produk", cta_url: "/produk" } },
+      { id: "hero", type: "hero_banner", visible: true, props: { banners: [{ image_url: "" }], autoplay_ms: 5000 } },
       { id: "categories", type: "category_list", visible: true, props: { title: "Jelajahi Kategori", categories: [] } },
       { id: "products", type: "product_list", visible: true, props: { title: "Semua Produk", layout: "card", source: "bestseller", item_limit: 20, show_view_all: false } },
       { id: "trust", type: "trust_badges", visible: true, props: { badges: [
@@ -61,10 +61,10 @@ const HOMEPAGE_PRESETS: Record<string, { label: string; sections: unknown[] }> =
     ],
   },
   lifestyle: {
-    label: "Lifestyle — Hero + Promo banner + Bestseller + Testimoni + Trust badges",
+    label: "Lifestyle — Hero carousel + Promo banner + Bestseller + Testimoni + Trust badges",
     sections: [
-      { id: "hero", type: "hero_banner", visible: true, props: { image_url: "", title: "", subtitle: "", cta_label: "Shop Now", cta_url: "/produk" } },
-      { id: "promo", type: "promo_banner", visible: true, props: { banners: [{ image_url: "", link_url: "/produk" }, { image_url: "", link_url: "/produk" }] } },
+      { id: "hero", type: "hero_banner", visible: true, props: { banners: [{ image_url: "" }], autoplay_ms: 5000 } },
+      { id: "promo", type: "promo_banner", visible: true, props: { display: "grid", banners: [{ image_url: "" }, { image_url: "" }] } },
       { id: "bestseller", type: "product_list", visible: true, props: { title: "Paling Laris", layout: "card", source: "bestseller", item_limit: 8, show_view_all: true } },
       { id: "testimonial", type: "testimonial", visible: true, props: { title: "Review Pelanggan", layout: "grid", items: [] } },
       { id: "trust", type: "trust_badges", visible: true, props: { badges: [
@@ -76,12 +76,13 @@ const HOMEPAGE_PRESETS: Record<string, { label: string; sections: unknown[] }> =
     ],
   },
   fullhouse: {
-    label: "Full — Sticky + Hero + Kategori + Promo + Produk + Testimoni + Trust badges",
+    label: "Full — Sticky + Hero carousel + Kategori + Wide + Promo + Produk + Testimoni + Trust badges",
     sections: [
       { id: "sticky", type: "sticky_top_message", visible: true, props: { text: "✨ Gratis ongkir untuk pembelian pertama!", link_url: "/produk", link_label: "Belanja Sekarang", dismissible: true } },
-      { id: "hero", type: "hero_banner", visible: true, props: { image_url: "", title: "", subtitle: "", cta_label: "Lihat Koleksi", cta_url: "/produk" } },
+      { id: "hero", type: "hero_banner", visible: true, props: { banners: [{ image_url: "" }], autoplay_ms: 5000 } },
       { id: "categories", type: "category_list", visible: true, props: { title: "Kategori", categories: [] } },
-      { id: "promo", type: "promo_banner", visible: true, props: { banners: [{ image_url: "", link_url: "/produk" }, { image_url: "", link_url: "/produk" }] } },
+      { id: "wide", type: "wide_banner", visible: true, props: { image_url: "" } },
+      { id: "promo", type: "promo_banner", visible: true, props: { display: "grid", banners: [{ image_url: "" }, { image_url: "" }] } },
       { id: "bestseller", type: "product_list", visible: true, props: { title: "Terlaris", layout: "card", source: "bestseller", item_limit: 8, show_view_all: true } },
       { id: "new_arrival", type: "product_list", visible: true, props: { title: "Baru Masuk", layout: "card", source: "bestseller", item_limit: 8, show_view_all: true } },
       { id: "testimonial", type: "testimonial", visible: true, props: { title: "Kata Mereka", layout: "carousel", items: [] } },

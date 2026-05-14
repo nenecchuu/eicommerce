@@ -1,10 +1,26 @@
+"use client";
+
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 interface Props {
   number: string;
 }
 
+function isFocusedCommercePath(pathname: string) {
+  return (
+    pathname === "/keranjang" ||
+    pathname === "/checkout" ||
+    pathname.startsWith("/checkout/") ||
+    pathname.startsWith("/order/")
+  );
+}
+
 export default function WhatsAppFloat({ number }: Props) {
+  const pathname = usePathname();
+
+  if (isFocusedCommercePath(pathname)) return null;
+
   return (
     <a
       href={`https://wa.me/${number}`}

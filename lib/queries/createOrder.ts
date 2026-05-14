@@ -1,4 +1,5 @@
 import type { CartItem, OrderItem } from "@/types/schema-contract";
+import { generateReadableOrderNumber } from "@/lib/utils/order";
 
 export interface CreateOrderPayload {
   tenant_id: string;
@@ -16,7 +17,7 @@ export interface CreateOrderPayload {
 
 export async function createOrder(
   payload: CreateOrderPayload
-): Promise<{ orderId: string }> {
+): Promise<{ orderId: string; orderNumber: string | null }> {
   const subtotal = payload.items.reduce(
     (sum, i) => sum + i.price * i.quantity,
     0
@@ -26,28 +27,46 @@ export async function createOrder(
   const { createClient } = await import("@/lib/supabase/client");
   const supabase = createClient();
 
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      tenant_id: payload.tenant_id,
-      customer_name: payload.customer_name,
-      customer_phone: payload.customer_phone,
-      customer_email: payload.customer_email || null,
-      shipping_address: payload.shipping_address,
-      shipping_courier: payload.shipping_courier,
-      shipping_service: payload.shipping_service,
-      shipping_cost: payload.shipping_cost,
-      payment_method: payload.payment_method,
-      subtotal,
-      total_amount,
-      notes: payload.notes || null,
-      status_text: "pending_payment",
-    })
-    .select("id")
-    .single();
+  let order: { id: string; order_number: string | null } | null = null;
+  let lastOrderError: { code?: string; message?: string } | null = null;
 
-  if (orderError || !order) {
-    throw new Error(orderError?.message ?? "Failed to create order");
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const orderNumber = generateReadableOrderNumber();
+    const { data, error } = await supabase
+      .from("orders")
+      .insert({
+        order_number: orderNumber,
+        tenant_id: payload.tenant_id,
+        customer_name: payload.customer_name,
+        customer_phone: payload.customer_phone,
+        customer_email: payload.customer_email || null,
+        shipping_address: payload.shipping_address,
+        shipping_courier: payload.shipping_courier,
+        shipping_service: payload.shipping_service,
+        shipping_cost: payload.shipping_cost,
+        payment_method: payload.payment_method,
+        subtotal,
+        total_amount,
+        notes: payload.notes || null,
+        status_text: "pending_payment",
+      })
+      .select("id, order_number")
+      .single();
+
+    if (!error && data) {
+      order = data;
+      break;
+    }
+
+    lastOrderError = error;
+    if (error?.code === "23505" && error.message?.includes("order_number")) {
+      continue;
+    }
+    break;
+  }
+
+  if (!order) {
+    throw new Error(lastOrderError?.message ?? "Failed to create order");
   }
 
   const orderItems: Omit<OrderItem, "id">[] = payload.items.map((i) => ({
@@ -74,5 +93,5 @@ export async function createOrder(
     throw new Error(itemsError.message);
   }
 
-  return { orderId: order.id };
+  return { orderId: order.id, orderNumber: order.order_number };
 }

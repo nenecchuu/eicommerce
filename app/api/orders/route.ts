@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getTenantByDomain } from "@/lib/queries/getTenant";
 import { getTenantDomain } from "@/lib/utils/tenant";
+import { generateReadableOrderNumber } from "@/lib/utils/order";
 
 interface CreateOrderRequest {
   customer_name: string;
@@ -15,14 +16,16 @@ interface CreateOrderRequest {
   notes?: string;
   items: Array<{
     product_id: string;
-    variant_id?: string;
+    variant_id?: string | null;
     product_name: string;
-    variant_label?: string;
+    variant_label?: string | null;
     price: number;
     quantity: number;
     slug: string;
   }>;
 }
+
+const MAX_ORDER_NUMBER_ATTEMPTS = 5;
 
 // Validation schema
 const createOrderSchema = z.object({
@@ -38,9 +41,9 @@ const createOrderSchema = z.object({
   items: z.array(
     z.object({
       product_id: z.string().uuid(),
-      variant_id: z.string().uuid().optional(),
+      variant_id: z.string().uuid().nullish(),
       product_name: z.string().min(1),
-      variant_label: z.string().optional(),
+      variant_label: z.string().nullish(),
       price: z.number().min(0),
       quantity: z.number().min(1, "Minimal 1 barang"),
       slug: z.string(),
@@ -87,33 +90,51 @@ export async function POST(request: NextRequest) {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
 
-    // Insert order
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        tenant_id: tenant.id,
-        customer_name: validated.customer_name,
-        customer_phone: validated.customer_phone,
-        customer_email: validated.customer_email || "",
-        shipping_address: validated.shipping_address,
-        shipping_courier: validated.shipping_courier,
-        shipping_service: validated.shipping_service,
-        shipping_cost: validated.shipping_cost,
-        payment_method: validated.payment_method,
-        subtotal,
-        discount_amount: 0,
-        tax_amount: 0,
-        total_amount,
-        notes: validated.notes || "",
-        status: 0, // pending_payment
-        status_text: "pending_payment",
-        payment_proof_url: "",
-      })
-      .select("id")
-      .single();
+    // Insert order. Retry only if the readable order number hits the unique index.
+    let order: { id: string; order_number: string | null } | null = null;
+    let lastOrderError: { code?: string; message?: string } | null = null;
 
-    if (orderError || !order) {
-      console.error("[Orders API] Error creating order:", orderError);
+    for (let attempt = 0; attempt < MAX_ORDER_NUMBER_ATTEMPTS; attempt += 1) {
+      const orderNumber = generateReadableOrderNumber();
+      const { data, error } = await supabase
+        .from("orders")
+        .insert({
+          order_number: orderNumber,
+          tenant_id: tenant.id,
+          customer_name: validated.customer_name,
+          customer_phone: validated.customer_phone,
+          customer_email: validated.customer_email || "",
+          shipping_address: validated.shipping_address,
+          shipping_courier: validated.shipping_courier,
+          shipping_service: validated.shipping_service,
+          shipping_cost: validated.shipping_cost,
+          payment_method: validated.payment_method,
+          subtotal,
+          discount_amount: 0,
+          tax_amount: 0,
+          total_amount,
+          notes: validated.notes || "",
+          status: 0, // pending_payment
+          status_text: "pending_payment",
+          payment_proof_url: "",
+        })
+        .select("id, order_number")
+        .single();
+
+      if (!error && data) {
+        order = data;
+        break;
+      }
+
+      lastOrderError = error;
+      if (error?.code === "23505" && error.message?.includes("order_number")) {
+        continue;
+      }
+      break;
+    }
+
+    if (!order) {
+      console.error("[Orders API] Error creating order:", lastOrderError);
       return NextResponse.json(
         { error: "Gagal membuat pesanan" },
         { status: 500 }
@@ -154,7 +175,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       order_id: order.id,
-      order_number: `ORD-${order.id.slice(0, 8).toUpperCase()}`,
+      order_number: order.order_number,
       total_amount,
       status: "pending_payment",
     }, { status: 201 });

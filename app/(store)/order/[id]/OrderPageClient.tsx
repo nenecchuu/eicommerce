@@ -1,31 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Lock, CheckCircle, Clock, Truck, Package, XCircle, Copy, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatRupiah } from "@/lib/utils/price";
-import { getOrderStatusLabel, getOrderStatusColor, type OrderWithItems } from "@/lib/queries/getOrder";
-import type { OrderStatus } from "@/types/schema-contract";
+import { getOrderDisplayId } from "@/lib/utils/order";
+import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/queries/orderStatus";
+import type { OrderWithItems } from "@/lib/queries/orderTypes";
+import type { LucideIcon } from "lucide-react";
 
 interface Props {
   orderId: string;
-  tenantName: string;
   initialEmail?: string;
   order?: OrderWithItems | null;
 }
 
-export default function OrderPageClient({ orderId, tenantName, initialEmail, order: initialOrder }: Props) {
-  const [order, setOrder] = useState<OrderWithItems | null>(initialOrder ?? null);
+export default function OrderPageClient({ orderId, initialEmail, order: initialOrder }: Props) {
+  const order = initialOrder ?? null;
   const [copied, setCopied] = useState(false);
+  const orderDisplayId = order ? getOrderDisplayId(order) : orderId;
 
   const handleCopyOrderId = () => {
-    navigator.clipboard.writeText(orderId);
+    navigator.clipboard.writeText(orderDisplayId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const getStatusIcon = (status: string) => {
-    const icons: Record<string, any> = {
+    const icons: Record<string, LucideIcon> = {
       pending_payment: Clock,
       paid: CheckCircle,
       shipped: Truck,
@@ -56,7 +59,7 @@ export default function OrderPageClient({ orderId, tenantName, initialEmail, ord
 
             <h2 className="text-lg font-semibold text-center mb-2">Lengkapi untuk Melihat Detail</h2>
             <p className="text-sm text-gray-600 text-center mb-6">
-              Masukkan email yang digunakan saat memesan untuk melihat detail pesanan {orderId}
+              Masukkan email yang digunakan saat memesan untuk melihat detail pesanan {orderDisplayId}
             </p>
 
             <form action="" method="GET">
@@ -92,7 +95,7 @@ export default function OrderPageClient({ orderId, tenantName, initialEmail, ord
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-lg font-semibold">Order #{orderId.slice(0, 8).toUpperCase()}</h2>
+                    <h2 className="text-lg font-semibold">Order #{orderDisplayId}</h2>
                     <button
                       onClick={handleCopyOrderId}
                       className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -230,9 +233,9 @@ export default function OrderPageClient({ orderId, tenantName, initialEmail, ord
 
           <div className="text-center">
             <p className="text-sm text-gray-500 mb-3">Butuh bantuan?</p>
-            <a href="/" className="inline-block px-6 py-2 bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] rounded-lg font-semibold hover:opacity-90 transition-opacity text-sm">
+            <Link href="/" className="inline-block px-6 py-2 bg-[var(--tenant-primary)] text-[var(--tenant-primary-contrast)] rounded-lg font-semibold hover:opacity-90 transition-opacity text-sm">
               Hubungi Kami
-            </a>
+            </Link>
           </div>
         </div>
       )}

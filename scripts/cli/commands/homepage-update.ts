@@ -6,6 +6,7 @@ import { log } from "../lib/logger.js";
 
 type SectionType =
   | "hero_banner"
+  | "wide_banner"
   | "product_list"
   | "promo_banner"
   | "trust_badges"
@@ -22,6 +23,7 @@ interface Section {
 
 const SECTION_LABELS: Record<SectionType, string> = {
   hero_banner: "Hero Banner",
+  wide_banner: "Wide Banner",
   product_list: "Product List",
   promo_banner: "Promo Banner",
   trust_badges: "Trust Badges",
@@ -31,9 +33,10 @@ const SECTION_LABELS: Record<SectionType, string> = {
 };
 
 const SECTION_DEFAULTS: Record<SectionType, Record<string, unknown>> = {
-  hero_banner: { image_url: "", title: "", subtitle: "", cta_label: "Lihat Produk", cta_url: "/produk" },
+  hero_banner: { banners: [{ image_url: "" }], autoplay_ms: 5000 },
+  wide_banner: { image_url: "" },
   product_list: { title: "Produk", layout: "card", source: "bestseller", item_limit: 12, show_view_all: true },
-  promo_banner: { banners: [{ image_url: "", link_url: "/produk" }] },
+  promo_banner: { display: "grid", banners: [{ image_url: "" }] },
   trust_badges: { badges: [
     { key: "secure_transaction", label: "Transaksi Aman", active: true },
     { key: "free_shipping", label: "Gratis Ongkir", active: true },
@@ -51,15 +54,24 @@ function abortOnCancel(val: unknown) {
   }
 }
 
+function getBannerItems(props: Record<string, unknown>): Record<string, unknown>[] {
+  if (Array.isArray(props.banners) && props.banners.length > 0) {
+    return props.banners as Record<string, unknown>[];
+  }
+  if (props.image_url) return [props];
+  return [{ image_url: "" }];
+}
+
 function sectionSummary(s: Section): string {
   const vis = s.visible ? pc.green("✓") : pc.dim("✗");
   const label = SECTION_LABELS[s.type] ?? s.type;
   const extra: string[] = [];
 
-  if (s.type === "hero_banner" && s.props.title) extra.push(`"${s.props.title}"`);
+  if (s.type === "hero_banner") extra.push(`${getBannerItems(s.props).length} slide`);
+  if (s.type === "wide_banner") extra.push(s.props.image_url ? "1 banner" : "belum ada image");
   if (s.type === "product_list" && s.props.title) extra.push(`"${s.props.title}" · ${s.props.source} · ${s.props.item_limit} item`);
   if (s.type === "sticky_top_message" && s.props.text) extra.push(`"${s.props.text}"`);
-  if (s.type === "promo_banner") extra.push(`${(s.props.banners as unknown[]).length} banner`);
+  if (s.type === "promo_banner") extra.push(`${(s.props.banners as unknown[]).length} banner · ${s.props.display ?? "grid"}`);
   if (s.type === "trust_badges") extra.push(`${(s.props.badges as unknown[]).length} badge`);
 
   return `${vis} ${label}${extra.length ? pc.dim(" — " + extra.join(", ")) : ""}`;
@@ -70,17 +82,57 @@ async function editSectionProps(section: Section): Promise<Section> {
   const props = { ...section.props };
 
   if (type === "hero_banner") {
-    const title = await p.text({ message: "Judul hero", defaultValue: String(props.title ?? "") });
-    abortOnCancel(title);
-    const subtitle = await p.text({ message: "Subtitle", defaultValue: String(props.subtitle ?? "") });
-    abortOnCancel(subtitle);
-    const imageUrl = await p.text({ message: "Image URL", defaultValue: String(props.image_url ?? "") });
+    const currentBanners = getBannerItems(props);
+    const count = await p.text({
+      message: "Jumlah slide hero",
+      defaultValue: String(currentBanners.length),
+      validate(v) { if (isNaN(Number(v)) || Number(v) < 1) return "Minimal 1 slide"; },
+    });
+    abortOnCancel(count);
+
+    const banners: Record<string, unknown>[] = [];
+    for (let i = 0; i < Number(count); i += 1) {
+      const current = currentBanners[i] ?? {};
+      const imageUrl = await p.text({
+        message: `Slide ${i + 1} image URL`,
+        defaultValue: String(current.image_url ?? ""),
+        validate(v) { if (!v?.trim()) return "Image URL wajib diisi"; },
+      });
+      abortOnCancel(imageUrl);
+      const linkUrl = await p.text({ message: `Slide ${i + 1} link URL (opsional)`, defaultValue: String(current.link_url ?? "") });
+      abortOnCancel(linkUrl);
+      const title = await p.text({ message: `Slide ${i + 1} judul (opsional)`, defaultValue: String(current.title ?? "") });
+      abortOnCancel(title);
+      const subtitle = await p.text({ message: `Slide ${i + 1} subtitle (opsional)`, defaultValue: String(current.subtitle ?? "") });
+      abortOnCancel(subtitle);
+      const ctaLabel = await p.text({ message: `Slide ${i + 1} CTA label (opsional)`, defaultValue: String(current.cta_label ?? "") });
+      abortOnCancel(ctaLabel);
+      const ctaUrl = await p.text({ message: `Slide ${i + 1} CTA URL (opsional)`, defaultValue: String(current.cta_url ?? "") });
+      abortOnCancel(ctaUrl);
+      banners.push({ image_url: imageUrl, link_url: linkUrl, title, subtitle, cta_label: ctaLabel, cta_url: ctaUrl });
+    }
+
+    return { ...section, props: { banners, autoplay_ms: props.autoplay_ms ?? 5000 } };
+  }
+
+  if (type === "wide_banner") {
+    const imageUrl = await p.text({
+      message: "Image URL",
+      defaultValue: String(props.image_url ?? ""),
+      validate(v) { if (!v?.trim()) return "Image URL wajib diisi"; },
+    });
     abortOnCancel(imageUrl);
-    const ctaLabel = await p.text({ message: "CTA label", defaultValue: String(props.cta_label ?? "Lihat Produk") });
+    const linkUrl = await p.text({ message: "Link URL (opsional)", defaultValue: String(props.link_url ?? "") });
+    abortOnCancel(linkUrl);
+    const title = await p.text({ message: "Judul (opsional)", defaultValue: String(props.title ?? "") });
+    abortOnCancel(title);
+    const subtitle = await p.text({ message: "Subtitle (opsional)", defaultValue: String(props.subtitle ?? "") });
+    abortOnCancel(subtitle);
+    const ctaLabel = await p.text({ message: "CTA label (opsional)", defaultValue: String(props.cta_label ?? "") });
     abortOnCancel(ctaLabel);
-    const ctaUrl = await p.text({ message: "CTA URL", defaultValue: String(props.cta_url ?? "/produk") });
+    const ctaUrl = await p.text({ message: "CTA URL (opsional)", defaultValue: String(props.cta_url ?? "") });
     abortOnCancel(ctaUrl);
-    return { ...section, props: { ...props, title, subtitle, image_url: imageUrl, cta_label: ctaLabel, cta_url: ctaUrl } };
+    return { ...section, props: { image_url: imageUrl, link_url: linkUrl, title, subtitle, cta_label: ctaLabel, cta_url: ctaUrl } };
   }
 
   if (type === "product_list") {
@@ -144,7 +196,40 @@ async function editSectionProps(section: Section): Promise<Section> {
     return { ...section, props: { ...props, title } };
   }
 
-  // promo_banner & trust_badges: edit via JSON langsung (terlalu kompleks untuk form)
+  if (type === "promo_banner") {
+    const display = await p.select({
+      message: "Tampilan promo",
+      options: [{ value: "grid", label: "Grid" }, { value: "carousel", label: "Carousel" }],
+      initialValue: String(props.display ?? "grid"),
+    });
+    abortOnCancel(display);
+
+    const currentBanners = getBannerItems(props);
+    const count = await p.text({
+      message: "Jumlah promo banner",
+      defaultValue: String(Math.min(currentBanners.length, 3)),
+      validate(v) { if (isNaN(Number(v)) || Number(v) < 1 || Number(v) > 3) return "Isi 1 sampai 3 banner"; },
+    });
+    abortOnCancel(count);
+
+    const banners: Record<string, unknown>[] = [];
+    for (let i = 0; i < Number(count); i += 1) {
+      const current = currentBanners[i] ?? {};
+      const imageUrl = await p.text({
+        message: `Promo ${i + 1} image URL`,
+        defaultValue: String(current.image_url ?? ""),
+        validate(v) { if (!v?.trim()) return "Image URL wajib diisi"; },
+      });
+      abortOnCancel(imageUrl);
+      const linkUrl = await p.text({ message: `Promo ${i + 1} link URL (opsional)`, defaultValue: String(current.link_url ?? "") });
+      abortOnCancel(linkUrl);
+      banners.push({ image_url: imageUrl, link_url: linkUrl });
+    }
+
+    return { ...section, props: { display, banners, autoplay_ms: props.autoplay_ms ?? 4500 } };
+  }
+
+  // trust_badges: edit via JSON langsung (terlalu kompleks untuk form)
   log.warn(`Edit props ${SECTION_LABELS[type]} tidak tersedia via CLI — edit langsung di Supabase Studio.`);
   log.dim(`Props saat ini: ${JSON.stringify(props, null, 2)}`);
   return section;
@@ -171,7 +256,7 @@ export function registerHomepageUpdate(program: Command) {
         .single();
 
       if (tenantErr || !tenant) {
-        log.error(`Tenant '${slugVal}' tidak ditemukan.`);
+        log.error(`Tenant '${String(slugVal)}' tidak ditemukan.`);
         process.exit(1);
       }
 
@@ -181,7 +266,7 @@ export function registerHomepageUpdate(program: Command) {
         .eq("tenant_id", tenant.id)
         .single();
 
-      let sections: Section[] = (config?.sections as Section[] | null) ?? [];
+      const sections: Section[] = (config?.sections as Section[] | null) ?? [];
       let version = config?.version ?? 0;
       let dirty = false;
 
